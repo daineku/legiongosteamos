@@ -121,6 +121,10 @@ cmd_status() {
         echo "  state dir:    $LG_STATE/$t"
     fi
     if [ -f "$LG_REPO/tweaks/$t/status.sh" ]; then run_script "$t" status.sh | sed 's/^/  /'; fi
+    if [ "$CHECK_STATE" = installed ] && [ -f "$LG_REPO/tweaks/$t/verify.sh" ]; then
+        local vr; LG_VERIFY_QUICK=1 run_script "$t" verify.sh >/dev/null 2>&1; vr=$?
+        echo "  working:      $(case $vr in 0) echo yes ;; 2) echo "not checkable right now (e.g. outside Desktop Mode)" ;; *) echo "NO — run: ./legiongo.sh check $t" ;; esac)"
+    fi
 }
 
 cmd_install() {
@@ -163,20 +167,33 @@ cmd_install() {
         sudo -v || lg_die "sudo is required for $t"
     fi
 
-    if run_script "$t" install.sh; then
-        check_state "$t"
-        if [ "$CHECK_STATE" = installed ]; then
-            lg_ok "$t installed and verified"
-        else
-            lg_warn "$t installed, but verification reports: $CHECK_STATE ($CHECK_DETAIL)"
-        fi
-        lg_info "Next: $(lg_mf .restart "$t")"
+    local why="" vrc=0
+    if ! run_script "$t" install.sh; then
+        why="an installation step failed"
     else
-        lg_error "installation of $t failed; rolling back the partial changes"
+        # Verification is authoritative: recorded files intact (check.sh) AND the tweak actually works (verify.sh).
+        check_state "$t"
+        if [ "$CHECK_STATE" != installed ]; then
+            why="post-install check reports '$CHECK_STATE' ($CHECK_DETAIL)"
+        elif [ -f "$LG_REPO/tweaks/$t/verify.sh" ]; then
+            lg_step "Verifying that $t works"
+            run_script "$t" verify.sh; vrc=$?
+            case "$vrc" in
+                0) ;;
+                2) lg_warn "functional verification deferred (see above); it runs automatically when the condition is met" ;;
+                *) why="functional verification failed (see above)" ;;
+            esac
+        fi
+    fi
+    if [ -n "$why" ]; then
+        lg_error "installation of $t failed: $why"
+        lg_error "rolling back the changes made by this installation (your own files are kept)"
         run_script "$t" uninstall.sh --rollback || true
         rollback_deps "${installed_deps[@]+"${installed_deps[@]}"}"
-        lg_die "rollback finished; see $LG_STATE/.uninstalled/ for the log"
+        lg_die "rollback finished; nothing of $t remains active. Log: $LG_STATE/.uninstalled/"
     fi
+    lg_ok "$t installed and verified"
+    lg_info "Next: $(lg_mf .restart "$t")"
 }
 
 # Undo dependencies that were installed earlier in the same (failed) transaction, newest first.
