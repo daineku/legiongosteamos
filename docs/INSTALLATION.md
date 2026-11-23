@@ -1,74 +1,71 @@
 # Installation
 
-## 1. Get the repository
+## One command per tweak
 
-In Desktop Mode, open **Konsole**:
-
-```bash
-git clone https://github.com/daineku/legiongosteamos.git
-cd legiongosteamos
-```
-
-You can read every script before running anything. Nothing is downloaded and executed blindly. The only download happens inside `precision-touchpad`: an official GitHub release archive, verified by SHA-256.
-
-## 2. See what is available
+Open **Konsole** in Desktop Mode and paste (replace `steam-keyboard` with the tweak you want):
 
 ```bash
-./legiongo.sh list
-./legiongo.sh info <tweak>
-./legiongo.sh check <tweak>      # read-only
+d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
 ```
 
-## 3. Install one tweak
+What happens:
+1. The project is cloned once, at the fixed release tag `v0.2.0`, into `~/.local/share/legiongo-steamos/v0.2.0`. Git verifies the content by its commit hashes, and you can read every script there. Nothing is piped from the internet into a shell.
+2. `legiongo.sh install <tweak>` checks the device, SteamOS version, InputPlumber, KDE, Steam and existing setups. It explains anything that needs `sudo` or another tweak, and asks first.
+3. The tweak is installed, verified, and its rollback state is saved in `~/.local/state/legiongo-steamos/<tweak>/`.
 
-```bash
-./legiongo.sh install <tweak>
-```
+To verify the checkout: `git -C ~/.local/share/legiongo-steamos/v0.2.0 log -1 --format=%H` must match the commit shown on the GitHub release page.
 
-- **Dependencies.** If a tweak depends on another (only `desktop-touchpad` → `precision-touchpad`), the installer explains why and asks. Nothing is installed without your yes.
-- **Administrator rights.** `precision-touchpad` and `desktop-power-policy` write system files and use `sudo`. On SteamOS the `deck` user has no password by default; set one once with `passwd`. The other tweaks never use sudo.
-- **Re-running** `install` is safe: unchanged files are skipped, and nothing is duplicated.
-- **Untested SteamOS version:** the installer stops. Add `--force` only if you accept the risk, and then check the tweak's verification steps.
-- **Non-interactive use:** `--yes` answers confirmations (dependency installation, creating Steam's debugger flag).
+**Administrator rights:** `precision-touchpad`, `desktop-power-policy`, `decky-loader` and `decky-power-plugins` write system files and use `sudo`. SteamOS's `deck` user has no password until you set one with `passwd`.
 
-## 4. Verify
+## Uninstall
 
-```bash
-./legiongo.sh status <tweak>
-```
+The same line with `uninstall`. It restores what the tweak changed and keeps files you edited afterwards. Backups and logs remain in `~/.local/state/legiongo-steamos/.uninstalled/`.
 
-Each tweak's README has a *Verification* section with a hands-on test.
+## Update one tweak
 
-## 5. Uninstall
+Use the one-command line from the **new** release's README with `update <tweak>`:
+- Only that tweak is updated.
+- A tweak that is already current reports "up to date".
+- A damaged one (`partial`) is repaired.
 
-```bash
-./legiongo.sh uninstall <tweak>
-```
+An **adopted** manual setup cannot be updated in place: `uninstall`, then `install`.
 
-This restores what the tweak changed and keeps files you edited afterwards. Backups and logs remain in `~/.local/state/legiongo-steamos/.uninstalled/`.
+## Options
 
-## Already have a manual setup?
+Put options in front of `"$d/legiongo.sh"`, for example `LG_IP_VARIANT=tapfilter "$d/legiongo.sh" install precision-touchpad`.
 
-If you set up one of these fixes by hand earlier (for example from the original development notes), `check` reports `external`, and `install` refuses to overwrite it. You have two options:
+| Option | Tweak | Effect |
+|---|---|---|
+| `--yes` | all | answer confirmations (dependencies, Steam debugger flag) |
+| `--force` | all | allow an untested SteamOS version, or a tweak reported as upstream equivalent |
+| `LG_KEYBOARD_LAYOUTS="de fr"` | steam-keyboard | add KDE layouts for your Steam keyboard languages |
+| `LG_KEYBOARD_AUTOOPEN=1` | steam-keyboard | open the keyboard on text-field focus |
+| `LG_IP_VARIANT=glide\|tapfilter\|release` | precision-touchpad | choose the InputPlumber build (default glide) |
+| `LG_IP_BUILD=1` | precision-touchpad | build the patched variant locally with podman instead of downloading it |
+| `LG_IP_BINARY=/path` | precision-touchpad | install your own InputPlumber 0.84.0 build (asks first) |
 
-```bash
-./legiongo.sh adopt <tweak>       # record it as-is; status/uninstall then manage it
-```
+## Commands
 
-or remove it by hand, then install the packaged version.
+| Command | |
+|---|---|
+| `list` | all tweaks, status, state on this device |
+| `info <tweak>` | what it does, requirements |
+| `check <tweak>` | read-only requirements and detection |
+| `install <tweak>` | install (idempotent) |
+| `update <tweak>` | update or repair one installed tweak |
+| `status [tweak]` | installed version, file integrity, service state |
+| `uninstall <tweak>` | remove and restore |
+| `adopt <tweak>` | record an equivalent manual setup without changing it |
+| `doctor` | privacy-safe system and compatibility report |
 
-## Failed installation
+## Existing manual setups
 
-If an install step fails, the installer rolls back everything that tweak changed so far. If something is still left over, `./legiongo.sh status <tweak>` shows `partial`; running `uninstall` (or `install` again) resolves it.
+If a fix is already present (set up by hand, or by Decky's own installer), `check` reports `external`, and `install` refuses to overwrite it. Run `adopt <tweak>` to record it as it is. After that, `status` and `uninstall` manage it.
 
-## After SteamOS updates
+## Failures
 
-All files live in `/home` and `/etc`, which SteamOS keeps across updates. Run `./legiongo.sh status` after an update. See [COMPATIBILITY.md](COMPATIBILITY.md).
+A failed step rolls back everything that tweak changed. If a dependency was installed in the same command, it is rolled back too. Leftovers show as `partial`; run `update` (repair) or `uninstall`.
 
-## Updating this repository
+## Developers
 
-```bash
-git pull
-./legiongo.sh status
-./legiongo.sh install <tweak>     # re-applies only what changed
-```
+`git clone https://github.com/daineku/legiongosteamos.git && cd legiongosteamos && ./legiongo.sh list`. See [MAINTAINING.md](MAINTAINING.md).

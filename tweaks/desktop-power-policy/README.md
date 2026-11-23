@@ -1,87 +1,70 @@
 # Desktop Power Policy
 
-**Status: Experimental** · Desktop Mode (system service) · needs sudo · tweak id `desktop-power-policy`
+**Experimental** · Desktop Mode (system service) · needs sudo · id `desktop-power-policy`
 
-## What This Tweak Does
+> Keeps the desktop efficient on battery and fast on AC, without touching Gaming Mode.
 
-An event-driven root service (`legion-power-policy.service`) applies a power policy **only while Desktop Mode is active**:
+## What It Does
 
-| Power source | Lenovo firmware profile (gamezone) | CPU EPP |
+A small event-driven service, active **only in Desktop Mode**:
+
+| Power source | Lenovo firmware profile | CPU energy preference |
 |---|---|---|
-| Battery | `balanced` (firmware limits 15 / 15 / 30 W) | `balance_performance` |
-| AC adapter | `performance` (20 / 20 / 35 W) | `balance_performance` |
+| Battery | balanced (15 / 15 / 30 W) | balance_performance |
+| Charger | performance (20 / 20 / 35 W) | balance_performance |
 
-It also re-enables CPU boost, SMT and automatic GPU clocks if a Gaming Mode tool left them disabled.
-- In Gaming Mode it **writes nothing**. Steam's own performance settings, or a Decky plugin such as SimpleDeckyTDP, stay in full control.
-- If SimpleDeckyTDP or LegionGoRemapper are installed, the service unloads only their frontends from the desktop Steam client. Otherwise they would also try to manage power in Desktop Mode.
-- It records the battery level before and after each sleep, and a few snapshots of Gaming Mode values, in `/var/log/legion-power/evidence.jsonl`.
+It also turns CPU boost, SMT and automatic GPU clocks back on if a game tool left them off. In Gaming Mode it writes nothing, so Steam or SimpleDeckyTDP stay in control.
 
 ## Why You Need It
 
-After Gaming Mode, the firmware often stays in a "custom" high-limit profile (for example 30 W), and Desktop Mode keeps running with gaming power limits. Some Gaming Mode tools also leave CPU boost disabled or a power-saving EPP set, which makes the desktop feel sluggish.
-
-## What Improves
-
-Measured on the reference device in Desktop Mode, on battery (single 2-minute runs, ±0.2 W noise):
-
-| Configuration | Battery draw (median) | Short CPU burst |
-|---|---|---|
-| Before: firmware custom 30 W, EPP balance_performance | 7.86 W | 0.225 s |
-| This policy: balanced + balance_performance | **7.11 W** (about −10 %) | 0.225 s (unchanged) |
-| Rejected: balanced + balance_power | 6.82 W | 0.310 s (+38 % slower) |
-
-So idle and light desktop use draws about 0.75 W less with unchanged responsiveness. **This is one device and one workload.** It is not a battery-life promise.
+After gaming, the Legion Go often stays in a high-power custom firmware profile on the desktop, wasting battery. Some game tools also leave CPU boost disabled, which makes the desktop sluggish.
 
 ## Before vs After
 
-BEFORE: Desktop Mode inherits whatever power limits the last game or tool left behind.
+Measured on the reference device, Desktop Mode on battery, light use (single 2-minute runs, ±0.2 W):
 
-AFTER: Desktop Mode always uses the firmware's balanced profile on battery and its performance profile on AC, with boost enabled.
+| | Battery draw | Short CPU burst |
+|---|---|---|
+| Before (firmware custom 30 W) | 7.86 W | 0.225 s |
+| After | **7.11 W** (about −10 %) | 0.225 s (unchanged) |
 
-## Requirements
+This is one device and one workload, not a battery-life promise.
 
-- Lenovo Legion Go (1st gen) with the `lenovo-wmi-gamezone` platform-profile driver (SteamOS 3.9.5 kernel 7.2 has it), and the amd-pstate EPP interface.
-- SteamOS 3.9.5 (tested). **sudo**: it installs a root service in `/etc`, which survives SteamOS updates.
-- python3 with GObject introspection, and UPower (both ship with SteamOS).
-- **Conflicts:** any other tool that sets the firmware profile or EPP in Desktop Mode (for example power-profiles-daemon policies or scripts of your own). Gaming Mode tools do not conflict.
+## How It Improves Legion Go
 
-## Installation
+Desktop use draws a little less power on battery without feeling slower, and Gaming Mode settings no longer leak into the desktop.
 
-```bash
-./legiongo.sh install desktop-power-policy
-```
-
-## Verification
+## Install — One Command
 
 ```bash
-./legiongo.sh status desktop-power-policy      # gamezone profile and EPP, service state, last action
-journalctl -u legion-power-policy -n 5         # "applied desktop policy (...): battery, balanced, EPP balance_performance"
+d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install desktop-power-policy
 ```
 
-Pause the policy at any time with `sudo touch /etc/legion-power/disabled`, and resume it with `sudo rm /etc/legion-power/disabled`.
-
-## Uninstallation
+## Uninstall — One Command
 
 ```bash
-./legiongo.sh uninstall desktop-power-policy
+d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall desktop-power-policy
 ```
 
-This stops and removes the service and restores the firmware profile and EPP that were active when you installed it. The evidence log in `/var/log/legion-power/` is kept; delete it manually if you like.
+This restores the firmware profile and energy preference that were active when you installed it.
+
+## How to Check It Works
+
+`~/.local/share/legiongo-steamos/v0.2.0/legiongo.sh status desktop-power-policy` shows the firmware profile and EPP. `journalctl -u legion-power-policy -n 3` shows lines like `applied desktop policy (...): battery, balanced`. Pause the policy with `sudo touch /etc/legion-power/disabled`.
+
+## Dependencies
+
+- sudo (root service in `/etc`).
+- The firmware profile driver `lenovo-wmi-gamezone` and amd-pstate EPP, both present in SteamOS 3.9.5.
+- Optional: SimpleDeckyTDP / LegionGoRemapper (the `decky-power-plugins` tweak). In Desktop Mode the policy unloads their frontends from the desktop Steam client, so only one tool manages power there.
+
+## Compatibility
+
+Legion Go (1st gen), SteamOS 3.9.5. The battery path was measured. The charger path is implemented but was **not tested**. Gaming Mode is untouched by design. The installer was validated in isolated test installs.
 
 ## Known Limitations
 
-- **Experimental.** The battery path is measured. The AC path (performance profile) is implemented but was **not tested** with a charger.
-- The policy values are the reference device owner's choice. They are documented, not universally optimal. Change `POLICY` in `/etc/legion-power/legion-power-policy.py` and restart the service to use your own (a re-install then reports the file as changed).
-- Desktop/Gaming detection relies on logind session types. A setup with an unusual session layout could be misdetected; check the journal.
-- Gaming Mode behaviour (FPS, thermals) is not affected by design, and was not benchmarked.
+- **Experimental:** the values are the reference owner's choice, not a universal optimum. You can change `POLICY` in `/etc/legion-power/legion-power-policy.py` and restart the service.
+- It writes a small evidence log to `/var/log/legion-power/` (battery before/after sleep), which is kept after uninstall.
 
-## Technical Details
-
-- `/etc/legion-power/legion-power-policy.py` (python3, GLib main loop, no polling):
-  - Listens to logind seat0 session changes, UPower `OnBattery`, logind `PrepareForSleep`, and Steam restarts (inotify on `~/.steam/steam.pid`).
-  - Writes only values that differ, and verifies them by read-back.
-  - Writes `/sys/class/platform-profile/*/profile` (gamezone), `cpu*/cpufreq/energy_performance_preference`, `cpufreq/boost`, `smt/control` and `power_dpm_force_performance_level`.
-  - Decky plugin frontends are unloaded through Steam's local debugger, only if that debugger is enabled.
-- `/etc/systemd/system/legion-power-policy.service`: `WantedBy=multi-user.target`, `Restart=on-failure`.
-- The installer writes your home directory into the script (to find `~/.steam/steam.pid`).
-- Not part of this tweak: the `acpi_call` kernel module and the SimpleDeckyTDP / LegionGoRemapper plugin setup that the reference device also uses. See `docs/DEVELOPMENT_AUDIT.md`.
+Technical details: [docs/technical/desktop-power-policy.md](../../docs/technical/desktop-power-policy.md)

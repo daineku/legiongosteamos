@@ -8,7 +8,8 @@ Thanks for helping improve SteamOS on the Legion Go.
 2. **Preserve SteamOS.** No writes under `/usr`, no replacement of Steam components, no Gaming Mode changes unless that is the point of the tweak (and documented).
 3. **Small and event-driven.** No polling loops, no background updaters, no new runtimes when SteamOS already ships one.
 4. **Reversible.** Every change goes through `lib/backup.sh` (`lg_put_file`, `lg_put_content`, `lg_unit_enable`, ...) so that uninstall can undo it.
-5. **Honest status.** `Stable` requires hardware verification, including a fresh install through `legiongo.sh`.
+5. **Honest status.** `Reference Verified` requires working behaviour on the reference Legion Go plus passing installer tests; everything else is `Experimental`. Passing ShellCheck or CI is not hardware verification.
+6. **Feature-level compatibility.** Never drop a tweak because an upstream version number grew. Probe whether SteamOS provides the function and report `upstream-equivalent` when it does.
 
 ## Adding a tweak
 
@@ -16,17 +17,17 @@ Thanks for helping improve SteamOS on the Legion Go.
 tweaks/<id>/manifest.json  README.md  check.sh  install.sh  uninstall.sh  [adopt.sh] [status.sh]  files/
 ```
 
-- `README.md` must contain these sections:
-  - What This Tweak Does
+- `README.md` must contain these sections (simple language; engineering details go to `docs/technical/<id>.md`):
+  - What It Does
   - Why You Need It
-  - What Improves
   - Before vs After
-  - Requirements
-  - Installation
-  - Verification
-  - Uninstallation
+  - How It Improves Legion Go
+  - Install — One Command
+  - Uninstall — One Command
+  - How to Check It Works
+  - Dependencies
+  - Compatibility
   - Known Limitations
-  - Technical Details
 - `check.sh` must change nothing and end with `lg_check_result` (one `RESULT=` line).
 - Edit shared KDE files key by key (`kwriteconfig6`), never by replacing the file.
 - Do not reference other tweaks' files. Declare a dependency in `manifest.json` instead.

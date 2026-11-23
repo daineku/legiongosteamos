@@ -3,11 +3,12 @@
 ## Layout
 
 ```
-legiongo.sh              command dispatcher (list, info, check, install, status, uninstall, adopt)
+legiongo.sh              command dispatcher (list, info, check, install, update, status, uninstall, adopt, doctor)
 lib/common.sh            environment, manifest.json access, confirmations, check helpers
 lib/logging.sh           output and per-tweak log
 lib/detection.sh         device (DMI), SteamOS version, session, package versions
-lib/backup.sh            state tracking, atomic writes, backups, rollback
+lib/backup.sh            state tracking, atomic writes, backups, rollback, shared-resource reference counting
+lib/doctor.sh            privacy-safe system/compatibility report
 tweaks/<id>/
     manifest.json        id, name, version, status, scope, requires_root, depends, tested_steamos, summary, restart
     README.md            user guide (fixed set of sections)
@@ -17,7 +18,10 @@ tweaks/<id>/
     adopt.sh             (optional) records an equivalent manual setup without changing it
     status.sh            (optional) extra status lines
     files/               files installed (verbatim or templated *.in)
-tests/run-tests.sh       static checks + sandboxed install tests
+tests/run-tests.sh       static checks + sandboxed install tests (+ tests/test_lgk_helper.py)
+compat/upstream.json     reviewed upstream versions (read by the upstream-watch workflow)
+.github/workflows/       ci.yml (static + sandbox tests, no hardware), upstream-watch.yml (weekly review issues)
+experimental/            research that is not an installable tweak (wifi-reliability)
 ```
 
 The installer is plain Bash plus tools that ship with SteamOS (`jq`, `sha256sum`, `kwriteconfig6`, `systemctl`). It runs only when invoked. The tweaks' runtime components are the original, verified implementations. Three of them are Python (stdlib + PyGObject, both part of SteamOS), because rewriting working, measured code would mean publishing something different from what was tested.
@@ -32,9 +36,10 @@ The installer is plain Bash plus tools that ship with SteamOS (`jq`, `sha256sum`
    - `conflict`
    - `unsupported`
    - `untested` (SteamOS version not listed in `tested_steamos`)
-   - `not-needed`
-2. `legiongo.sh install` refuses `external`, `conflict`, `unsupported` and `not-needed`. It refuses `untested` without `--force`.
-3. Dependencies (`depends`) are explained and installed only after an explicit yes (or `--yes`). A dependency counts as satisfied if it is installed, adopted, present externally, or not needed.
+   - `upstream-equivalent` (stock SteamOS already provides the function; a feature probe, not a version comparison)
+   - `incompatible`
+2. `legiongo.sh install` refuses `external`, `conflict` and `incompatible`. It refuses `untested` and `upstream-equivalent` without `--force`.
+3. Dependencies (`depends`) are explained and installed only after an explicit yes (or `--yes`). A dependency counts as satisfied if it is installed, adopted, present externally, or provided by stock SteamOS (`check.sh` runs with `LG_AS_DEPENDENCY=1`). Dependencies installed in a command that later fails are rolled back with it (transaction).
 4. Root tweaks validate `sudo` first. Root writes go through `sudo install` / `sudo mv` only.
 5. `install.sh` runs with `set -e`. If it fails, `uninstall.sh --rollback` undoes everything recorded so far.
 6. `check.sh` runs again to verify. The restart hint from the manifest is printed.
@@ -83,3 +88,23 @@ On a device that already has a manual setup (like the reference device), `adopt`
 ## Extending
 
 A new tweak is a directory with the files above. The test suite checks that every tweak has the required files, executable scripts, README sections and a valid manifest, and that no tweak references another tweak's files.
+
+## Update
+
+`update <tweak>` compares the installed version (state) with `manifest.json`:
+- equal and intact → "up to date";
+- different, or `partial` → `install` again (idempotent; only changed files are rewritten, and user edits are backed up first).
+
+Other tweaks are never touched. Adopted setups must be uninstalled and installed instead.
+
+## Shared resources
+
+A file needed by several tweaks (Steam's debugger flag: `steam-keyboard`, `decky-loader`) is acquired with `lg_shared_acquire` and released with `lg_shared_release`. Holders are listed in `~/.local/state/legiongo-steamos/.shared/<name>`. The file is deleted only when no tweak holds it, it did not exist before, and no unmanaged user of it (Decky Loader) is present.
+
+## Dependency safety
+
+`uninstall` refuses to remove a tweak that another installed tweak depends on (unless `--force`).
+
+## One-command bootstrap
+
+The README's line clones a **pinned release tag** into `~/.local/share/legiongo-steamos/<tag>` (once) and runs `legiongo.sh <command> <tweak>` from it. Installed files are copies, so the checkout can be deleted. State lives in `~/.local/state`, so any later release's checkout can update or uninstall.

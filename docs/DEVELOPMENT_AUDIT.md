@@ -77,11 +77,11 @@ Legend:
 
 | Modification found | Why it is not published | Class |
 |---|---|---|
-| Static Wi-Fi regulatory domain, `/etc/modprobe.d/legion-wifi-regdom.conf` (`options cfg80211 ieee80211_regdom=<country>`) meant to keep 5 GHz active scanning after resume | **Shown not to work.** The parameter is set, but `iw reg get` reports the global domain `00`, and the journal after a resume shows 5 GHz channels still `no_ir` until beacon hints arrive. A country-specific value must not be shipped as a default anyway. | A, not B, G |
+| Static Wi-Fi regulatory domain, `/etc/modprobe.d/legion-wifi-regdom.conf` | Re-investigated in v0.2.0 (see below). **Never applied by the kernel**, so it cannot be the cause of the observed faster reconnects. Kept as research in `experimental/wifi-reliability/` with a read-only measurement tool. | A, E |
 | udev rule `/etc/udev/rules.d/70-legion-go-libinput-ignore-raw.rules` (libinput ignores raw Legion USB interface 1) | Addresses a re-enumeration race that was confirmed to exist but was **not shown to cause** the post-resume cursor symptom it was meant for. No measured benefit. | A, C |
 | `acpi_call` kernel module built for the exact kernel (`/etc/legion-power/modules/<kver>/`, `legion-acpi-call.service`) | Out-of-tree kernel module: taints the kernel, must be rebuilt after every kernel update, and was only needed for LegionGoRemapper's fan/charge features, which are seeded OFF | A, E, G |
-| SimpleDeckyTDP v1.0.7 and LegionGoRemapper v0.3.0 Decky plugins with local safety patches and seeded settings | Third-party plugins with their own distribution channel. The local patches (touchpad never auto-off, RGB no-op, fan-curve floor, restore on unload) should go upstream rather than be redistributed here. | A, E |
-| Decky Loader (`plugin_loader.service`) | Third-party project, installed by its own installer | A |
+| SimpleDeckyTDP v1.0.7 and LegionGoRemapper v0.3.0 Decky plugins with local safety patches and seeded settings | **Integrated in v0.2.0** as `decky-power-plugins` (pinned releases, SHA-256, our BSD-licensed patch, settings overlay). | A, E, F |
+| Decky Loader (`plugin_loader.service`) | **Integrated in v0.2.0** as `decky-loader` (pinned v3.3.1, binary identical to the reference install). | A, F |
 | Remote-desktop app (Flatpak, user service) and its connection settings | Personal setup with account and peer identifiers; generic app installation, not a Legion Go fix | A, H |
 | Steam Input configset for the Legion Go (backup only; restored to stock) | Not active: the stock configset is in place | D |
 | KDE cursor theme, mouse acceleration for the stick mouse, tray/OSD layout tweaks | Personal preference | A, H |
@@ -94,3 +94,35 @@ Legend:
 - Post-resume erratic cursor for about one minute: observed, not root-caused. No tweak claims to fix it.
 - Controllers occasionally needing a manual reconnect before one test session: observed once, not investigated.
 - Gaming Mode effects of `precision-touchpad` and `desktop-power-policy`: by design limited; not benchmarked.
+
+## v0.2.0 reassessment (2026-11-23)
+
+### Wi-Fi
+
+| Category | Finding | Evidence |
+|---|---|---|
+| A. Proven configuration changes | `/etc/modprobe.d/legion-wifi-regdom.conf` (static country) | file present since 2026-11-13; `/sys/module/cfg80211/parameters/ieee80211_regdom` set |
+| B. User-observed improvements | faster reconnect after sleep, fewer long interruptions | owner's daily use |
+| C. Measured | resume → Wi-Fi connected: one baseline sample 19.8 s (2026-11-13); after: median 1.5 s, p90 19.6 s, max 75.7 s over 22 resumes | journal; `experimental/wifi-reliability/wifi-report.sh --all` |
+| D. Unconfirmed causal explanation | SteamOS 3.9.5 "fast WiFi reconnect on resume" in wpa_supplicant (backend `wpa_supplicant`, set in Valve's `99-valve-wifi-backend.conf`) | release notes; no A/B test |
+| E. Ineffective | the static country: global regdom stays `00`; all 20 regdom changes this boot are `BEACON_HINT`; none is USER/COUNTRY | `iw reg get`, journal |
+
+Other Wi-Fi configuration checked and found **stock**:
+- NetworkManager conf (`10-steamos-defaults.conf`, `20-connectivity.conf`, Valve's `99-valve-wifi-backend.conf` with `wifi.powersave=3`);
+- no dispatcher scripts; iwd inactive; mt7921e parameters default;
+- no Wi-Fi related services or scripts from this project.
+
+Conclusion: nothing distributable. A Wi-Fi tweak needs a measured A/B result on the same network.
+
+### Multilingual keyboard
+
+v40 had Russian-only code paths: `XKB_FOR = {russian: "ru", qwerty: "us"}`, a reset to `us` on hide, and grid chords tied to that map. v41 makes them generic:
+- a table of all 33 Steam layouts (XKB layout/variant or Steam-native IME);
+- the user's enabled layouts read from Steam's settings store;
+- an exact `(layout, variant)` match against KDE's configured layouts;
+- the user's own layout restored instead of `us`;
+- physical long-press chords limited to grid-verified layouts.
+
+### Third-party components
+
+Decky Loader, SimpleDeckyTDP, LegionGoRemapper and InputPlumber are now integrated with pinned releases and source patches. See [THIRD_PARTY.md](THIRD_PARTY.md). acpi_call remains excluded (out-of-tree kernel module).

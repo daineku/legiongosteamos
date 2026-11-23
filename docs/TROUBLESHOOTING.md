@@ -1,11 +1,14 @@
 # Troubleshooting
 
-Start with:
+Start with (`L=~/.local/share/legiongo-steamos/v0.2.0/legiongo.sh`):
 
 ```bash
-./legiongo.sh status            # every tweak
-./legiongo.sh check <tweak>     # requirements, read-only
+$L doctor            # system + compatibility report, safe to share
+$L status            # every tweak
+$L check <tweak>     # requirements, read-only
 ```
+
+Below, `./legiongo.sh` means that same script.
 
 State, backups and logs: `~/.local/state/legiongo-steamos/<tweak>/` (the `log` file lists every action).
 
@@ -15,6 +18,8 @@ State, backups and logs: `~/.local/state/legiongo-steamos/<tweak>/` (the `log` f
 |---|---|
 | `status` shows `partial` | A recorded file is missing or was edited. Run `install` again to restore it, or `uninstall` to remove the tweak. |
 | `install` says `external` | A manual setup of the same fix exists. Use `adopt`, or remove it first. |
+| `install` says `upstream-equivalent` | SteamOS already provides this. The tweak is skipped; `--force` installs anyway. |
+| `install` says `incompatible` | A requirement is missing on this device (see `check`). Nothing was changed. |
 | `install` says `untested` | Your SteamOS version is not in the tested list. Use `--force` only if you accept the risk. |
 | `sudo: a password is required` | Set a password for `deck` with `passwd` (SteamOS ships without one). |
 | "kept ...: it was changed after installation" during uninstall | Intentional. Your edited file was not deleted. Remove it manually if you no longer need it. |
@@ -25,7 +30,7 @@ State, backups and logs: `~/.local/state/legiongo-steamos/<tweak>/` (the `log` f
 |---|---|
 | Keyboard looks stock | Restart Steam once (needed after the debugger flag is created). Check `systemctl --user status legiongo-steam-keyboard` and `journalctl --user -u legiongo-steam-keyboard -n 30`. |
 | Wrong size after resizing | Hide and reopen the keyboard. |
-| Russian characters missing in Chrome | KDE needs the `ru` layout: install with `LG_KEYBOARD_ADD_RU=1`, or add Russian in System Settings → Keyboard → Layouts. |
+| Letters of a language missing in Chrome | `./legiongo.sh status steam-keyboard` shows which KDE layout is missing. Add it in System Settings → Keyboard → Layouts, or reinstall with `LG_KEYBOARD_LAYOUTS="<code>"`. |
 | Disable temporarily | `touch ~/.config/legiongo-steamos/steam-keyboard/lgk-disabled`, then restart Steam |
 | Completely stock again | `./legiongo.sh uninstall steam-keyboard`, then restart Steam |
 
@@ -60,3 +65,12 @@ State, backups and logs: `~/.local/state/legiongo-steamos/<tweak>/` (the `log` f
 | Enhanced Microphone missing | `systemctl --user restart filter-chain`, then `journalctl --user -u filter-chain -n 20` |
 | Still distorted | Lower the input level in System Settings → Sound |
 | An app uses the raw mic | Select "Enhanced Microphone" in that app |
+
+## decky-loader / decky-power-plugins
+
+| Symptom | What to do |
+|---|---|
+| No Decky menu in Gaming Mode | `sudo systemctl restart plugin_loader`, then restart Steam. After a Steam update, check Decky's releases for a fix. |
+| A plugin fails after a Steam update | Wait for an upstream fix (see docs/THIRD_PARTY.md). Steam itself is unaffected; `uninstall decky-power-plugins` removes them cleanly. |
+| TDP fights with Steam | Turn Steam's own TDP limit off in Gaming Mode. |
+| Touchpad off or LEDs off after LegionGoRemapper loads | Should not happen with our patch. Report it with `doctor` output. |
