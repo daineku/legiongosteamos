@@ -58,7 +58,9 @@ lg_confirm() {   # lg_confirm "question"  -> 0 = yes
 # ---------------------------------------------------------------- check.sh helpers
 # check.sh scripts print human-readable lines and finish with exactly one line
 #   RESULT=<state> <detail>
-# state: not-installed | installed | partial | external | conflict | unsupported | untested | not-needed
+# state: not-installed | installed | partial | external | conflict | incompatible | untested | upstream-equivalent
+#   upstream-equivalent: the stock SteamOS software already provides what this tweak would install
+#   (feature-level check, not a version comparison); the tweak stays available.
 LG_FAIL=0; LG_UNTESTED=0
 lg_req() {   # lg_req "description" command...   (hard requirement)
     local d="$1"; shift
@@ -95,7 +97,7 @@ lg_check_result() {   # lg_check_result EXTERNAL(0|1) [CONFLICT_REASON] [EXTERNA
         fi
     elif [ -n "$conflict" ]; then echo "RESULT=conflict $conflict"
     elif [ "$external" = 1 ]; then echo "RESULT=external ${detail:-an equivalent manual setup was found}"
-    elif [ "$LG_FAIL" = 1 ]; then echo "RESULT=unsupported requirements not met"
+    elif [ "$LG_FAIL" = 1 ]; then echo "RESULT=incompatible requirements not met on this device"
     elif [ "$LG_UNTESTED" = 1 ]; then echo "RESULT=untested SteamOS version not tested (use --force to install anyway)"
     else echo "RESULT=not-installed ready to install"
     fi

@@ -21,6 +21,8 @@ Commands:
   install <tweak>         Install one tweak (asks before installing any dependency)
   status [tweak]          Show the installed state of one tweak, or of all tweaks
   uninstall <tweak>       Remove a tweak and restore what it changed
+  update <tweak>          Update one installed tweak to this version (other tweaks are not touched)
+  doctor                  System and compatibility report (no personal data; safe to share)
   adopt <tweak>           Record an equivalent setup that is already on this device, without
                           changing it, so that status/uninstall can manage it
   help                    Show this help
@@ -46,9 +48,9 @@ run_script() {   # run_script TWEAK SCRIPT [ARGS...]
 }
 
 # check.sh result state ("installed", "external", ...) and detail
-check_state() {   # check_state TWEAK [quiet]
+check_state() {   # check_state TWEAK
     local out
-    out=$(run_script "$1" check.sh 2>&1)
+    out=$(LG_AS_DEPENDENCY="${LG_AS_DEPENDENCY:-0}" run_script "$1" check.sh 2>&1)
     CHECK_OUTPUT="$out"
     CHECK_LINE=$(printf '%s\n' "$out" | sed -n 's/^RESULT=//p' | tail -1)
     CHECK_STATE=${CHECK_LINE%% *}
@@ -56,9 +58,9 @@ check_state() {   # check_state TWEAK [quiet]
     [ -n "$CHECK_STATE" ] || { CHECK_STATE=error; CHECK_DETAIL="check.sh produced no result"; }
 }
 
-dep_satisfied() {   # installed by us, adopted, or present externally
-    check_state "$1"
-    case "$CHECK_STATE" in installed|external|not-needed) return 0 ;; esac
+dep_satisfied() {   # installed by us, adopted, present externally, or already provided by stock SteamOS
+    LG_AS_DEPENDENCY=1 check_state "$1"
+    case "$CHECK_STATE" in installed|external|upstream-equivalent) return 0 ;; esac
     return 1
 }
 
@@ -136,18 +138,23 @@ cmd_install() {
         external)
             lg_die "An equivalent setup is already present ($CHECK_DETAIL). Nothing was changed.
        Run './legiongo.sh adopt $t' to manage it with this tool, or remove it first." ;;
-        not-needed)  lg_die "Not needed on this system: $CHECK_DETAIL" ;;
+        upstream-equivalent)
+            [ "$LG_FORCE" = 1 ] || lg_die "Not needed here: $CHECK_DETAIL
+       The tweak stays available; re-run with --force to install it anyway."
+            lg_warn "installing although SteamOS already provides this (--force)" ;;
         partial)
             lg_warn "previous installation is incomplete ($CHECK_DETAIL); re-applying" ;;
         conflict)    lg_die "Conflict: $CHECK_DETAIL. Nothing was changed." ;;
         *)           lg_die "Cannot install: $CHECK_DETAIL" ;;
     esac
 
+    local installed_deps=()
     for dep in $(lg_mf '.depends[]' "$t"); do
         if ! dep_satisfied "$dep"; then
             lg_warn "$t needs '$dep' ($(lg_mf .name "$dep")): $(lg_mf .summary "$dep" | cut -c1-160)..."
             lg_confirm "Install the dependency '$dep' first?" || lg_die "Dependency '$dep' is required. Nothing was changed."
-            cmd_install "$dep" || lg_die "Dependency '$dep' failed to install. Nothing else was changed."
+            ( cmd_install "$dep" ) || { rollback_deps "${installed_deps[@]+"${installed_deps[@]}"}"; lg_die "Dependency '$dep' failed to install; changes of this transaction were rolled back."; }
+            installed_deps+=("$dep")
         fi
     done
 
@@ -167,8 +174,43 @@ cmd_install() {
     else
         lg_error "installation of $t failed; rolling back the partial changes"
         run_script "$t" uninstall.sh --rollback || true
+        rollback_deps "${installed_deps[@]+"${installed_deps[@]}"}"
         lg_die "rollback finished; see $LG_STATE/.uninstalled/ for the log"
     fi
+}
+
+# Undo dependencies that were installed earlier in the same (failed) transaction, newest first.
+rollback_deps() {
+    local i
+    for (( i = $# ; i > 0 ; i-- )); do
+        lg_warn "rolling back dependency '${!i}' installed in this transaction"
+        run_script "${!i}" uninstall.sh --rollback || true
+    done
+}
+
+cmd_update() {
+    require_tweak "$1"
+    local t="$1" have want
+    lg_is_tracked_tweak "$t" || lg_die "$t is not installed (install it with: ./legiongo.sh install $t)"
+    if [ "$(lg_state_get mode "$t")" = adopted ]; then
+        lg_die "$t is an adopted manual setup; it cannot be updated in place.
+       To switch to the maintained version: ./legiongo.sh uninstall $t && ./legiongo.sh install $t"
+    fi
+    have=$(lg_state_get version "$t"); want=$(lg_mf .version "$t")
+    if [ "$have" = "$want" ]; then
+        check_state "$t"
+        if [ "$CHECK_STATE" = installed ]; then lg_ok "$t is up to date (v$want)"; return 0; fi
+        lg_info "$t v$want reports '$CHECK_STATE' ($CHECK_DETAIL); repairing"
+    else
+        lg_step "Updating $t: v$have -> v$want"
+    fi
+    cmd_install "$t"
+}
+
+cmd_doctor() {
+    # shellcheck source=lib/doctor.sh
+    . "$LG_REPO/lib/doctor.sh"
+    lg_doctor
 }
 
 cmd_uninstall() {
@@ -186,8 +228,8 @@ cmd_uninstall() {
     for other in $(tweak_ids); do
         [ "$other" = "$t" ] && continue
         if lg_mf '.depends[]' "$other" | grep -qx "$t" && lg_is_tracked_tweak "$other"; then
-            lg_warn "'$other' is installed and depends on '$t'"
-            lg_confirm "Uninstall '$t' anyway?" || lg_die "cancelled"
+            [ "$LG_FORCE" = 1 ] || lg_die "'$other' is installed and depends on '$t'. Uninstall '$other' first, or use --force."
+            lg_warn "'$other' depends on '$t'; uninstalling anyway (--force)"
         fi
     done
     if [ "$(lg_mf .requires_root "$t")" = true ] && [ "$LG_TEST" != 1 ] && [ "$(id -u)" != 0 ]; then
@@ -235,6 +277,8 @@ case "${1:-help}" in
     install)   cmd_install "${2:-}" ;;
     uninstall) cmd_uninstall "${2:-}" ;;
     adopt)     cmd_adopt "${2:-}" ;;
+    update)    cmd_update "${2:-}" ;;
+    doctor)    cmd_doctor ;;
     help)      usage ;;
     *)         usage; exit 2 ;;
 esac

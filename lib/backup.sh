@@ -223,3 +223,37 @@ lg_verify_manifest() {
     done < "$m"
     return "$bad"
 }
+
+# ---------------------------------------------------------------- shared resources (reference counted)
+# A file that several tweaks need (e.g. Steam's debugger flag, used by steam-keyboard and decky-loader).
+# $LG_STATE/.shared/<name> lists the tweaks holding it; "preexisting" marks a file that existed before any
+# tweak created it. The file is deleted only when the last holder releases it and no tweak found it pre-existing.
+lg_shared_file() { printf '%s/.shared/%s' "$LG_STATE" "$1"; }
+lg_shared_acquire() {   # lg_shared_acquire NAME PATH   (creates an empty PATH if missing)
+    local f; f=$(lg_shared_file "$1")
+    mkdir -p "$(dirname "$f")"; touch "$f"
+    if [ ! -e "$2" ]; then
+        mkdir -p "$(dirname "$2")"; : > "$2"
+        lg_log "created shared $1 ($2)"
+    elif [ ! -s "$f" ]; then
+        echo preexisting >> "$f"
+    fi
+    grep -qx "$LG_TWEAK" "$f" || echo "$LG_TWEAK" >> "$f"
+    lg_state_set "shared_$1" "$2"
+}
+lg_shared_release() {   # lg_shared_release NAME [KEEP_IF_EXISTS]   (keep the file while KEEP_IF_EXISTS exists)
+    local f path; f=$(lg_shared_file "$1"); path=$(lg_state_get "shared_$1")
+    [ -n "$path" ] && [ -e "$f" ] || return 0
+    grep -vx "$LG_TWEAK" "$f" > "$f.tmp" || true; mv -f "$f.tmp" "$f"
+    if grep -qvx preexisting "$f"; then
+        lg_info "kept $path (still used by: $(grep -vx preexisting "$f" | paste -sd, -))"
+    elif grep -qx preexisting "$f"; then
+        lg_info "kept $path (it existed before installation)"
+        rm -f "$f"
+    elif [ -n "${2:-}" ] && [ -e "$2" ]; then
+        lg_info "kept $path (needed by $2)"
+        rm -f "$f"
+    else
+        rm -f "$path" "$f"; lg_log "removed shared $1 ($path)"
+    fi
+}
