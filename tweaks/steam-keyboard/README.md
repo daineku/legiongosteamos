@@ -47,7 +47,7 @@ You can fill in forms, chat and type commands in Desktop Mode with the touchscre
 Open Konsole in Desktop Mode and paste:
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
 ```
 
 If Steam's local debugger is not enabled yet, the installer asks before enabling it, and you then restart Steam once.
@@ -62,7 +62,7 @@ Options (put them in front of the last part of the command, e.g. `LG_KEYBOARD_LA
 ## Uninstall — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall steam-keyboard
 ```
 
 Restart Steam afterwards for the completely stock keyboard. Only what the tweak added is removed; your KDE settings stay.
@@ -72,7 +72,7 @@ Restart Steam afterwards for the completely stock keyboard. Only what the tweak 
 1. Open the keyboard (Steam button + X). It sits flush at the bottom, with a keyboard icon instead of the Emoji key and Ctrl/Alt next to the language key.
 2. In Chrome, type in a form field and press Tab. The next field gets focus.
 3. Switch the keyboard language with the 🌐 key and type a few letters.
-4. Run `~/.local/share/legiongo-steamos/v0.2.0/legiongo.sh status steam-keyboard`. It shows each Steam keyboard language you enabled, and whether it is *synced* to a KDE layout, *needs a KDE layout*, or is handled by Steam itself (input methods).
+4. Run `~/.local/share/legiongo-steamos/v0.2.1/legiongo.sh status steam-keyboard`. It shows each Steam keyboard language you enabled, and whether it is *synced* to a KDE layout, *needs a KDE layout*, or is handled by Steam itself (input methods).
 
 ## Dependencies
 

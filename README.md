@@ -41,13 +41,13 @@ No tweak has been tested on a second physical Legion Go yet. They are written to
 Open **Konsole** in Desktop Mode and paste the line for the tweak you want. This one installs the keyboard tweak:
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
 ```
 
 Replace `steam-keyboard` at the end with any tweak id from the table. Each tweak's page has its own ready-to-copy line.
 
 What the command does:
-1. Downloads this project at the fixed release `v0.2.0` into `~/.local/share/legiongo-steamos/` (a normal folder you can inspect).
+1. Downloads this project at the fixed release `v0.2.1` into `~/.local/share/legiongo-steamos/` (a normal folder you can inspect).
 2. Checks your device.
 3. Explains anything that needs your password or another tweak, and asks first.
 4. Installs and verifies the tweak.
@@ -61,7 +61,7 @@ Tweaks that change system files ask for your `sudo` password. SteamOS has no pas
 Same line, with `uninstall`:
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall steam-keyboard
 ```
 
 This restores what the tweak changed. Settings you changed yourself are kept.
@@ -71,7 +71,7 @@ This restores what the tweak changed. Settings you changed yourself are kept.
 When a new release is out, its README shows the same line with the new version. Use `update` with the tweak you want:
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" update steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" update steam-keyboard
 ```
 
 Only that tweak is updated. There is no background updater.
@@ -79,7 +79,7 @@ Only that tweak is updated. There is no background updater.
 ## Is my device OK?
 
 ```bash
-~/.local/share/legiongo-steamos/v0.2.0/legiongo.sh doctor
+~/.local/share/legiongo-steamos/v0.2.1/legiongo.sh doctor
 ```
 
 This shows your device, SteamOS and driver versions, which tweaks are installed, and whether anything needs attention. It contains no personal data, so it is safe to paste into a bug report.

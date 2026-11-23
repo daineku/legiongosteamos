@@ -40,7 +40,7 @@ Desktop navigation, text selection and hitting small close or checkbox buttons w
 ## Install — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install precision-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install precision-touchpad
 ```
 
 For the tap-precision variant, insert `LG_IP_VARIANT=tapfilter` before `"$d/legiongo.sh"`. For the unmodified upstream build, use `LG_IP_VARIANT=release`. The installer asks for your sudo password, and controller input pauses for about 3 seconds while InputPlumber restarts.
@@ -48,14 +48,14 @@ For the tap-precision variant, insert `LG_IP_VARIANT=tapfilter` before `"$d/legi
 ## Uninstall — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall precision-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall precision-touchpad
 ```
 
 This returns to the stock SteamOS InputPlumber.
 
 ## How to Check It Works
 
-1. Run `~/.local/share/legiongo-steamos/v0.2.0/legiongo.sh status precision-touchpad`. It shows the binary (variant) and that the service is active.
+1. Run `~/.local/share/legiongo-steamos/v0.2.1/legiongo.sh status precision-touchpad`. It shows the binary (variant) and that the service is active.
 2. Move a finger slowly on the touchpad: the cursor glides instead of stepping.
 
 ## Dependencies

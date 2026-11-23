@@ -58,7 +58,7 @@ Test the build on hardware (`LG_IP_BINARY=build/out/... ./legiongo.sh install pr
 
 1. `tests/run-tests.sh` passes. CI is green: static checks and sandboxed installer tests only, **not hardware**.
 2. Update `CHANGELOG.md` and the release tag in all one-command lines: `grep -rl 'legiongo-steamos/v' README.md tweaks docs`, then replace the version.
-3. Commit, then `git tag -a vX.Y.Z -m "..."` and `git push origin main vX.Y.Z`.
+3. Commit, then create a **lightweight** tag (`git tag vX.Y.Z`; annotated tags make shallow `git clone -b` print a confusing warning) and `git push origin main vX.Y.Z`.
 4. `gh release create vX.Y.Z --notes-file <notes>`.
 
 ## 6. Rolling back a bad release

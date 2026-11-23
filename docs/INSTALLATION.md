@@ -5,15 +5,15 @@
 Open **Konsole** in Desktop Mode and paste (replace `steam-keyboard` with the tweak you want):
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.0; { [ -d "$d" ] || git clone -q --depth 1 -b v0.2.0 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
 ```
 
 What happens:
-1. The project is cloned once, at the fixed release tag `v0.2.0`, into `~/.local/share/legiongo-steamos/v0.2.0`. Git verifies the content by its commit hashes, and you can read every script there. Nothing is piped from the internet into a shell.
+1. The project is cloned once, at the fixed release tag `v0.2.1`, into `~/.local/share/legiongo-steamos/v0.2.1`. Git verifies the content by its commit hashes, and you can read every script there. Nothing is piped from the internet into a shell.
 2. `legiongo.sh install <tweak>` checks the device, SteamOS version, InputPlumber, KDE, Steam and existing setups. It explains anything that needs `sudo` or another tweak, and asks first.
 3. The tweak is installed, verified, and its rollback state is saved in `~/.local/state/legiongo-steamos/<tweak>/`.
 
-To verify the checkout: `git -C ~/.local/share/legiongo-steamos/v0.2.0 log -1 --format=%H` must match the commit shown on the GitHub release page.
+To verify the checkout: `git -C ~/.local/share/legiongo-steamos/v0.2.1 log -1 --format=%H` must match the commit shown on the GitHub release page.
 
 **Administrator rights:** `precision-touchpad`, `desktop-power-policy`, `decky-loader` and `decky-power-plugins` write system files and use `sudo`. SteamOS's `deck` user has no password until you set one with `passwd`.
 

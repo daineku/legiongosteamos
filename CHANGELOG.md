@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-11-23
+
+- One-command lines are pinned to `v0.2.1`, a lightweight tag, with git's detached-HEAD advice turned off, so the bootstrap clone prints no confusing git messages. No tweak changed (same code as 0.2.0).
+
 ## 0.2.0 — 2026-11-23
 
 - **One-command install, uninstall and update** for every tweak (pinned release checkout; no curl-to-shell).

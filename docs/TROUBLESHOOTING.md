@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Start with (`L=~/.local/share/legiongo-steamos/v0.2.0/legiongo.sh`):
+Start with (`L=~/.local/share/legiongo-steamos/v0.2.1/legiongo.sh`):
 
 ```bash
 $L doctor            # system + compatibility report, safe to share
