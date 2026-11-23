@@ -1,12 +1,18 @@
 {
   "id": "precision-touchpad",
   "name": "Precision Touchpad (upstream InputPlumber)",
-  "version": "0.84.0-2",
+  "version": "0.84.0-3",
   "status": "Reference Verified",
   "scope": "System (Desktop + Gaming)",
   "requires_root": true,
   "depends": [],
-  "tested_steamos": ["3.9.5"],
+  "tested_steamos": [
+    "3.9.5"
+  ],
   "summary": "SteamOS 3.9 ships InputPlumber 0.78, which reads the Legion Go right touchpad from the gamepad report at about 40 Hz, so the cursor moves in visible steps. This tweak runs the official upstream InputPlumber 0.84.0 release (native touchpad driver, about 116 Hz) next to the untouched stock package, with an automatic fallback to stock. Optional patched builds add a tap-to-click lift-off filter.",
-  "restart": "Nothing. InputPlumber is restarted during installation (controller input pauses for about 3 seconds)."
+  "restart": "Nothing. InputPlumber is restarted during installation (controller input pauses for about 3 seconds).",
+  "layer": "hardware",
+  "category": "legion-go",
+  "hardware": "legion-go",
+  "version_policy": "tested"
 }

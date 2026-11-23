@@ -1,6 +1,6 @@
 # Precision Touchpad
 
-**Reference Verified** on the reference Legion Go · system-wide (Desktop + Gaming Mode) · needs sudo · id `precision-touchpad`
+**Reference Verified** (Lenovo Legion Go, SteamOS 3.9.5; `glide` in daily use, `tapfilter` measured, `release` used for the rate fix) · Legion Go hardware · system-wide · needs sudo · id `precision-touchpad`
 
 > Improves touchpad responsiveness and cursor precision, making desktop navigation and small-button interaction more comfortable.
 
@@ -40,7 +40,7 @@ Desktop navigation, text selection and hitting small close or checkbox buttons w
 ## Install — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install precision-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install precision-touchpad
 ```
 
 For the tap-precision variant, insert `LG_IP_VARIANT=tapfilter` before `"$d/legiongo.sh"`. For the unmodified upstream build, use `LG_IP_VARIANT=release`. The installer asks for your sudo password, and controller input pauses for about 3 seconds while InputPlumber restarts.
@@ -48,14 +48,14 @@ For the tap-precision variant, insert `LG_IP_VARIANT=tapfilter` before `"$d/legi
 ## Uninstall — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall precision-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall precision-touchpad
 ```
 
 This returns to the stock SteamOS InputPlumber.
 
 ## How to Check It Works
 
-1. Run `~/.local/share/legiongo-steamos/v0.2.1/legiongo.sh status precision-touchpad`. It shows the binary (variant) and that the service is active.
+1. Run `~/.local/share/legiongo-steamos/v0.2.2-beta/legiongo.sh status precision-touchpad`. It shows the binary (variant) and that the service is active.
 2. Move a finger slowly on the touchpad: the cursor glides instead of stepping.
 
 ## Dependencies
@@ -77,11 +77,36 @@ The installer checks **features, not version numbers**:
 
 Tested: Legion Go 83E1, SteamOS 3.9.5. The installer was validated in isolated test installs; it has not been run on a second physical device.
 
+## Recovery
+
+The launcher never leaves you without controls. It starts the **stock** SteamOS InputPlumber instead when:
+- our build is missing or broken;
+- it crashed 4 times within 3 minutes (it tries our build again at the next boot);
+- a SteamOS update ships a stock InputPlumber **newer** than our build (never a downgrade).
+
+Emergency return to stock (SSH, a TTY or a USB keyboard), which removes only this tweak's drop-in:
+
+```bash
+sudo /home/legiongo-steamos/inputplumber/bin/legiongo-ip-restore-stock
+```
+
+## Resource cost
+
+The native touchpad driver in InputPlumber 0.84 reads the touchpad interface continuously. Measured idle, 30 s each, reference device:
+
+| Build | CPU (one core) | wake-ups/s |
+|---|---|---|
+| stock 0.78 | 3.1 % | 1,506 |
+| upstream 0.84 release | 6.3 % | 2,050 |
+| glide | 6.1 % | 2,043 |
+
+That is the price of 106 Hz instead of 42 Hz. Our patch adds nothing measurable on top.
+
 ## Known Limitations
 
 - The variant choice is a trade-off: `glide` feels smoother, `tapfilter` clicks more precisely.
 - A short period of erratic cursor movement after resume was seen before and after this change. It is not fixed by this tweak.
 - Gaming Mode uses the same InputPlumber. It was used normally there but not benchmarked.
-- Double-tap and tap-and-drag with the patched builds should be checked by you; they were not formally measured.
+- Double-tap and tap-and-drag: in daily use with `glide` on the reference device; with `tapfilter` only taps were measured.
 
 Technical details: [docs/technical/precision-touchpad.md](../../docs/technical/precision-touchpad.md)

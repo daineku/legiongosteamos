@@ -57,19 +57,10 @@ done < "$WORK/files"
 lg_info "$(grep -c . "$WORK/files") device profiles and capability maps installed"
 
 REAL_DEST="${IP_DEST#"$LG_ROOT"}"
-lg_put_content "$IP_DEST/bin/inputplumber-launch" 755 root <<LAUNCH
-#!/bin/sh
-# Installed by legiongo-steamos (precision-touchpad). Fail-safe: runs the stock SteamOS
-# InputPlumber whenever the upstream copy is missing or broken.
-UP=$REAL_DEST
-if [ -x "\$UP/bin/inputplumber" ] && "\$UP/bin/inputplumber" --version >/dev/null 2>&1 \\
-   && [ -d "\$UP/share/inputplumber/devices" ]; then
-    export XDG_DATA_DIRS="\$UP/share"
-    exec "\$UP/bin/inputplumber"
-fi
-echo "inputplumber-launch: upstream copy unavailable, falling back to stock /usr/bin/inputplumber" >&2
-exec /usr/bin/inputplumber
-LAUNCH
+sed "s|@DEST@|$REAL_DEST|g; s|@VERSION@|$IP_VERSION|g; s|@STOCK@|$LG_ROOT/usr/bin/inputplumber|g; s|@RUN@|$LG_ROOT/run/legiongo-steamos|g" "$LG_REPO/tweaks/precision-touchpad/files/inputplumber-launch.in" \
+    | lg_put_content "$IP_DEST/bin/inputplumber-launch" 755 root
+sed "s|@DROPIN@|${IP_DROPIN#"$LG_ROOT"}|g" "$LG_REPO/tweaks/precision-touchpad/files/legiongo-ip-restore-stock.in" \
+    | lg_put_content "$IP_DEST/bin/legiongo-ip-restore-stock" 755 root
 
 lg_step "systemd drop-in for inputplumber.service"
 lg_put_content "$IP_DROPIN" 644 root <<DROPIN

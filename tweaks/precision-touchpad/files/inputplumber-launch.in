@@ -1,0 +1,32 @@
+#!/bin/sh
+# Installed by legiongo-steamos (precision-touchpad). Runs the maintained InputPlumber build, but falls back
+# to the stock SteamOS InputPlumber (/usr/bin/inputplumber) whenever that is the safer choice:
+#   1. our binary or its data is missing, or fails `--version`;
+#   2. it crashed repeatedly: 4 starts within 180 s (counter in /run, so the next boot tries again);
+#   3. the stock InputPlumber is NEWER than our build (a SteamOS update): never downgrade it.
+# Emergency return to stock (SSH, TTY or physical keyboard): sudo @DEST@/bin/legiongo-ip-restore-stock
+UP=@DEST@
+OURS=@VERSION@
+STOCK=@STOCK@
+RUN=@RUN@
+stock() { echo "inputplumber-launch: using stock $STOCK ($1)" >&2; exec "$STOCK"; }
+
+[ -x "$UP/bin/inputplumber" ] && "$UP/bin/inputplumber" --version >/dev/null 2>&1 \
+    && [ -d "$UP/share/inputplumber/devices" ] || stock "maintained build missing or broken"
+
+sv=$("$STOCK" --version 2>/dev/null | awk '{print $2}')
+if [ -n "$sv" ] && [ "$sv" != "$OURS" ] && [ "$(printf '%s\n%s\n' "$sv" "$OURS" | sort -V | tail -1)" = "$sv" ]; then
+    stock "stock $sv is newer than the maintained build $OURS; rebuild needed"
+fi
+
+mkdir -p "$RUN" 2>/dev/null
+now=$(date +%s)
+recent=$(awk -v n="$now" '$1 > n - 180' "$RUN/ip-starts" 2>/dev/null | wc -l)
+if [ "$recent" -ge 4 ]; then
+    stock "maintained build restarted $recent times in 180 s; falling back until the next boot"
+fi
+{ awk -v n="$now" '$1 > n - 180' "$RUN/ip-starts" 2>/dev/null; echo "$now"; } > "$RUN/ip-starts.tmp" 2>/dev/null \
+    && mv -f "$RUN/ip-starts.tmp" "$RUN/ip-starts"
+
+export XDG_DATA_DIRS="$UP/share"
+exec "$UP/bin/inputplumber"

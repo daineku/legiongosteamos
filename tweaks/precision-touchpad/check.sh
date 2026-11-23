@@ -3,7 +3,7 @@
 . "$LG_REPO/lib/common.sh"
 . "$LG_REPO/tweaks/precision-touchpad/common-ip.sh"
 
-lg_check_platform yes
+lg_check_platform
 lg_req "InputPlumber service present" test -e "$LG_ROOT/usr/lib/systemd/system/inputplumber.service"
 lg_req "download and verification tools (curl, tar, sha256sum)" lg_have curl tar sha256sum
 case "$IP_VARIANT" in release|glide|tapfilter) lg_ok "variant: $IP_VARIANT" ;;
