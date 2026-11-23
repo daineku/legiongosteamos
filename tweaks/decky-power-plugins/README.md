@@ -1,6 +1,6 @@
 # Decky Power & Controller Plugins (safe setup)
 
-**Experimental** · Gaming Mode · needs sudo · depends on `decky-loader` · id `decky-power-plugins`
+**Reference Verified** for the safe setup and SimpleDeckyTDP (LegionGoRemapper controller features: Experimental) · Legion Go hardware · Gaming Mode · needs sudo · depends on `decky-loader` · id `decky-power-plugins`
 
 > Per-game TDP and Legion Go controller features in Gaming Mode, installed with safe defaults and our safety fixes.
 
@@ -41,7 +41,7 @@ You get Legion Go-specific power and controller controls in Gaming Mode without 
 ## Install — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install decky-power-plugins
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install decky-power-plugins
 ```
 
 If Decky Loader is missing, the installer explains it and asks before installing it too. If anything fails, both are rolled back.
@@ -49,7 +49,7 @@ If Decky Loader is missing, the installer explains it and asks before installing
 ## Uninstall — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall decky-power-plugins
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall decky-power-plugins
 ```
 
 ## How to Check It Works
@@ -62,11 +62,15 @@ In Gaming Mode: Quick Access (…) → plug icon → SimpleDeckyTDP and LegionGo
 
 ## Compatibility
 
-Legion Go (1st gen), SteamOS 3.9.5. Installed and loaded on the reference device: TDP settings were read back after the first apply, and touchpad and LED state were unchanged after load. LegionGoRemapper's controller features (remapping, fan curves, charge limit) were **not tested**; they start off. Gaming Mode FPS was not measured.
+| | Status |
+|---|---|
+| Install, safety patch, safe first start (boost on, no SMU write; touchpad/LEDs untouched) | Reference Verified |
+| SimpleDeckyTDP per-game TDP in Gaming Mode | Reference Verified (per-game profile in use on the reference device) |
+| LegionGoRemapper remapping, RGB, fan curves, charge limit | Experimental: never enabled on the reference device |
+| Other devices | not applicable (LegionGoRemapper drives Legion Go hardware) |
 
 ## Known Limitations
 
-- **Experimental.**
 - Fan control needs the firmware's custom mode. Changing the firmware profile resets custom curves to firmware cooling.
 - Plugins can break after Steam client updates until upstream releases fixes. See [docs/THIRD_PARTY.md](../../docs/THIRD_PARTY.md).
 - LegionGoRemapper's fan and charge features need the `acpi_call` kernel module, which this project does not install (see the audit).

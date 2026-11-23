@@ -30,13 +30,13 @@ You can quit Steam on the desktop and keep working with the touchpad.
 ## Install — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install desktop-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install desktop-touchpad
 ```
 
 ## Uninstall — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall desktop-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall desktop-touchpad
 ```
 
 ## How to Check It Works
@@ -50,7 +50,7 @@ Exit Steam (Steam menu → Exit). After about 2 seconds the touchpad moves the c
 
 ## Compatibility
 
-Legion Go (1st gen), SteamOS 3.9.5: Reference Verified (Steam exit and restart checked by the owner). Steam crash, resume and Gaming → Desktop switches use the same mechanism but were not explicitly tested. The installer was validated in isolated test installs.
+Legion Go (1st gen), SteamOS 3.9.5: Reference Verified. The owner checked Steam exit and restart, and the logs show 6 automatic hand-over cycles and 4 controller re-enumerations (resume) handled without a failure. Other devices: not applicable (it drives the Legion Go's InputPlumber composite device). The installer verifies that the service runs and watches the controller.
 
 ## Known Limitations
 

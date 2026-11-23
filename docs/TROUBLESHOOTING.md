@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Start with (`L=~/.local/share/legiongo-steamos/v0.2.1/legiongo.sh`):
+Start with (`L=~/.local/share/legiongo-steamos/v0.2.2-beta/legiongo.sh`):
 
 ```bash
 $L doctor            # system + compatibility report, safe to share
@@ -18,6 +18,8 @@ State, backups and logs: `~/.local/state/legiongo-steamos/<tweak>/` (the `log` f
 |---|---|
 | `status` shows `partial` | A recorded file is missing or was edited. Run `install` again to restore it, or `uninstall` to remove the tweak. |
 | `install` says `external` | A manual setup of the same fix exists. Use `adopt`, or remove it first. |
+| Install fails with "functional verification failed" | The tweak was installed but did not work, so it was rolled back automatically and nothing of it stays active. The lines above the error say which check failed. |
+| `status` says `working: NO` | Run `check <tweak>` and the tweak's "How to Check It Works"; `update <tweak>` repairs files. |
 | `install` says `upstream-equivalent` | SteamOS already provides this. The tweak is skipped; `--force` installs anyway. |
 | `install` says `incompatible` | A requirement is missing on this device (see `check`). Nothing was changed. |
 | `install` says `untested` | Your SteamOS version is not in the tested list. Use `--force` only if you accept the risk. |
@@ -40,7 +42,9 @@ State, backups and logs: `~/.local/state/legiongo-steamos/<tweak>/` (the `log` f
 |---|---|
 | Controllers unresponsive right after install/uninstall | Wait about 5 s (InputPlumber restart). If they stay dead: `sudo systemctl restart inputplumber`, or reboot. |
 | Check which build runs | `./legiongo.sh status precision-touchpad` |
-| Emergency fallback | Removing the drop-in returns to stock: `sudo rm /etc/systemd/system/inputplumber.service.d/50-legiongo-steamos-inputplumber.conf && sudo systemctl daemon-reload && sudo systemctl restart inputplumber` |
+| Emergency fallback (SSH/TTY) | `sudo /home/legiongo-steamos/inputplumber/bin/legiongo-ip-restore-stock` |
+| Journal says `using stock ... restarted N times` | Our build crashed repeatedly, so the stock InputPlumber runs until the next boot. Report it with `doctor` output. |
+| Journal says `stock X is newer` | A SteamOS update shipped a newer InputPlumber; ours is inactive until rebuilt (no downgrade). |
 
 ## desktop-touchpad
 

@@ -1,6 +1,6 @@
 # Enhanced Internal Microphone
 
-**Experimental** · user audio (Desktop and Gaming Mode) · no sudo · id `mic-enhance`
+**Reference Verified** (Lenovo Legion Go, SteamOS 3.9.5; default input in daily use) · portable by capability · user audio · no sudo · id `mic-enhance`
 
 > A fuller, clearer internal microphone that does not clip on loud sounds.
 
@@ -32,13 +32,13 @@ Voice chat and calls without a headset sound better.
 ## Install — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install mic-enhance
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install mic-enhance
 ```
 
 ## Uninstall — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall mic-enhance
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall mic-enhance
 ```
 
 This restores your previous default input and audio profile.
@@ -59,11 +59,11 @@ PipeWire `filter-chain.service` and CAPS LADSPA, both part of SteamOS. No sudo, 
 
 ## Compatibility
 
-Legion Go (1st gen) internal microphone, SteamOS 3.9.5. The installer detects the microphone's audio node on your device. It was validated in isolated test installs.
+Reference Verified on the Legion Go (1st gen) internal microphone, SteamOS 3.9.5. Other devices with exactly one internal analog microphone are compatible by capability, untested; the EQ was tuned for the Legion Go microphone. The installer detects the microphone's audio node.
 
 ## Known Limitations
 
-- **Experimental:** tuned by ear on one device; sound is a matter of taste.
+- Tuned by ear on the reference device; sound is a matter of taste.
 - If your voice still distorts, lower the input level in System Settings → Sound.
 - Apps that pick a specific device must be switched to "Enhanced Microphone" manually.
 

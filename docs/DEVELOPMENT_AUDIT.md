@@ -126,3 +126,38 @@ v40 had Russian-only code paths: `XKB_FOR = {russian: "ru", qwerty: "us"}`, a re
 ### Third-party components
 
 Decky Loader, SimpleDeckyTDP, LegionGoRemapper and InputPlumber are now integrated with pinned releases and source patches. See [THIRD_PARTY.md](THIRD_PARTY.md). acpi_call remains excluded (out-of-tree kernel module).
+
+## v0.2.2-beta audit (2026-11-23/24)
+
+### Published code vs the reference device
+
+| Tweak | Device runs | Published | Reconciliation |
+|---|---|---|---|
+| steam-keyboard | v40 (adopted manual setup) | v41 | The v40 → v41 diff is limited to Multilingual Input Support: the language table, the language-sync messages, the long-press gate, the KDE layout restore, and two state resets. Placement, Hide, Tab, modifiers and the controller bridge are byte-identical. v41 was run live on 2026-11-23 from a scratch copy, then v40 was restored. Verified: Russian and English typed into Chrome as trusted key events (`key="п" code=KeyG`, …); Tab, and Shift+Tab via the on-screen Shift key; language switch → KDE layout follows and the helper confirms; Hide → the user's layout returns; reopen → sync again; no unsupported hooks. |
+| precision-touchpad | glide binary `2fed277f…` | same binary (published asset, bit-identical rebuild) | identical |
+| desktop-touchpad | same script (adopted) | same script, renamed unit | identical code |
+| desktop-power-policy | same script | same script (home path templated) | identical code |
+| mic-enhance | same graph | same graph, renamed nodes | identical processing |
+| decky-loader | v3.3.1 binary | same binary | identical |
+| decky-power-plugins | patched v0.3.0 / v1.0.7 | same files | byte-identical |
+
+### Evidence from device logs (reconciling earlier gaps)
+
+| Earlier gap | Evidence | New record |
+|---|---|---|
+| Power policy AC path | 7 `applied desktop policy (...): AC, performance` events (power-source change and resume), 0 `WITH ERRORS`; 46 battery applications; evidence log with Charging / Not charging snapshots | AC path Reference Verified (functional); AC power not measured |
+| Touchpad hand-over: resume, re-enumeration | 6 ENABLE/DISABLE cycles, 4 controller-node re-watches, 0 failures in the journal | Reference Verified |
+| SimpleDeckyTDP in Gaming Mode | a per-game TDP profile exists in its settings | Reference Verified |
+| LegionGoRemapper controller features | all features still disabled in its settings | Experimental (never used) |
+| Tap/drag with patched builds | glide is the daily driver; tapfilter was measured for taps only | as stated |
+
+### Resource audit
+
+See [PERFORMANCE.md](PERFORMANCE.md). New finding: InputPlumber 0.84 costs about 3 percentage points of one core more than stock 0.78 at idle (6.3 % vs 3.1 %, 2,050 vs 1,506 wake-ups/s). That cost is upstream's native touchpad driver; our patch adds nothing. It is documented as a trade-off.
+
+### Installer issues found and fixed
+
+1. A failed post-install verification only printed a warning. Now it exits non-zero and rolls back.
+2. "Service active" was treated as working. Each tweak now has a functional `verify.sh`, and crash loops are detected (`NRestarts`).
+3. The InputPlumber launcher only handled a missing or broken binary. Now it also handles crash loops and newer stock versions, and an emergency restore script exists.
+4. Portable tweaks were gated by the Legion Go DMI or SteamOS version. Now they are gated by capability probes and a feature version policy; hardware tweaks keep the DMI gate, which `--force` cannot bypass.

@@ -52,7 +52,8 @@ Test the build on hardware (`LG_IP_BINARY=build/out/... ./legiongo.sh install pr
    ```bash
    LG_SHELLCHECK_IMAGE=docker.io/koalaman/shellcheck:stable tests/run-tests.sh
    ```
-4. Live-verify on the reference device, then update the status and `docs/TEST_REPORT.md`.
+4. Live-verify on the reference device, then update the status and `docs/TEST_REPORT.md`. To verify a new keyboard version without replacing the installed one: stop the installed helper, run the new `lgk-helper.py` from a scratch copy, test, stop it, and start the installed service again (it re-injects its own version).
+5. **Cross-device reports:** a compatibility issue with `doctor` output and the README's "How to Check It Works" results promotes a feature to `Cross-device Verified` for that device. Record it in `docs/COMPATIBILITY.md`.
 
 ## 5. Publishing a release
 

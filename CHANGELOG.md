@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.2.2-beta — 2026-11-24
+
+**Release hardening**
+- Post-install verification is authoritative. Every tweak with a runtime part has a functional `verify.sh`, and a failure exits non-zero and rolls the installation back. `status` shows `working: yes/NO`. Crash loops are detected even when systemd reports "active".
+- InputPlumber launcher:
+  - falls back to stock after 4 starts in 180 s (retries at the next boot);
+  - never downgrades when SteamOS ships a newer InputPlumber;
+  - new emergency `legiongo-ip-restore-stock` for SSH/TTY.
+- `desktop-power-policy` records and restores the CPU boost state.
+
+**Cross-device architecture**
+- Three layers (native SteamOS / portable / Legion Go hardware). Manifests declare `layer`, `category`, `hardware` (portable | capability | legion-go) and `version_policy`.
+- Portable tweaks (steam-keyboard, mic-enhance, desktop-power-policy, decky-loader) are no longer locked to the Legion Go DMI. Capability probes decide; `check` explains why something is unavailable. Hardware tweaks keep the DMI gate, which `--force` cannot bypass.
+- Keyboard input profiles are detected: dual-joystick (InputPlumber virtual Deck controller), dual-trackpad (Steam Deck: Steam's own typing, bridge off), touchscreen.
+- The power policy works by capability: EPP, CPU boost control, Lenovo firmware profiles.
+
+**Verification model**
+- Statuses: Reference Verified / Cross-device Verified / Experimental / Unsupported.
+- All seven tweaks are Reference Verified on the reference Legion Go, based on device evidence: keyboard v41 verified live; AC path, hand-over cycles and SimpleDeckyTDP use found in the logs. Per-feature exceptions are documented (LegionGoRemapper controller features).
+
+**Measurements and documentation**
+- New `docs/PERFORMANCE.md`: idle CPU, memory and wake-ups of every component; InputPlumber 0.78 vs 0.84 vs glide; CPU boost on/off power and performance.
+- README reorganised: "Native Compatibility & Enhancements", architecture diagram, catalog by category, dual-joystick typing.
+- Compatibility matrix per device class.
+- 128 sandbox tests: verification failure and rollback, launcher recovery, cross-device detection, input profiles, version policy.
+
 ## 0.2.1 — 2026-11-23
 
 - One-command lines are pinned to `v0.2.1`, a lightweight tag, with git's detached-HEAD advice turned off, so the bootstrap clone prints no confusing git messages. No tweak changed (same code as 0.2.0).

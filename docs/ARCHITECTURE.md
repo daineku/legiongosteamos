@@ -108,3 +108,31 @@ A file needed by several tweaks (Steam's debugger flag: `steam-keyboard`, `decky
 ## One-command bootstrap
 
 The README's line clones a **pinned release tag** into `~/.local/share/legiongo-steamos/<tag>` (once) and runs `legiongo.sh <command> <tweak>` from it. Installed files are copies, so the checkout can be deleted. State lives in `~/.local/state`, so any later release's checkout can update or uninstall.
+
+## Layers and capability detection
+
+| Layer | Manifest | Gate |
+|---|---|---|
+| 1 Native SteamOS | — | never modified on disk |
+| 2 Portable enhancements | `"layer": "portable"`, `"hardware": "portable"` or `"capability"` | `check.sh` probes interfaces: Steam/KDE/debugger, input profiles (`lg_input_profiles`), EPP/boost/firmware profiles, audio nodes. `"version_policy": "feature"`: no blanket SteamOS version gate. |
+| 3 Legion Go hardware | `"layer": "hardware"`, `"hardware": "legion-go"` | DMI identity (83E1 / "Legion Go 8APU1") + feature probes. `"version_policy": "tested"`. `--force` cannot override missing hardware. |
+
+## Authoritative verification
+
+`install` succeeds only if:
+1. every recorded file is intact (`check.sh` → `installed`), and
+2. the tweak's `verify.sh` confirms it works. For example:
+   - the keyboard helper is running steadily and has applied the script to Steam;
+   - InputPlumber runs our build without falling back and exposes the controller;
+   - Decky's server is listening.
+
+`verify.sh` returns 0 (works), 1 (broken: the installation is rolled back and `install` exits non-zero) or 2 (cannot be checked now, e.g. outside Desktop Mode: a warning). "Running steadily" means active and `NRestarts` unchanged across a settle period, so a crash loop that systemd briefly reports as active is caught. `status` runs the same checks quickly and prints `working: yes / NO`.
+
+## InputPlumber recovery (precision-touchpad)
+
+The `inputplumber-launch` wrapper runs stock `/usr/bin/inputplumber` instead of our build when:
+1. our build is missing or fails `--version`;
+2. it was started 4 times within 180 s (crash loop; the counter lives in `/run`, so the next boot retries);
+3. the stock build is newer (never downgrade after a SteamOS update).
+
+The fallback reason is logged to the journal, and `verify.sh`/`status` report it. `legiongo-ip-restore-stock` removes the drop-in for emergencies (SSH/TTY).

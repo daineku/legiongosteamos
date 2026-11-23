@@ -1,37 +1,59 @@
 # Compatibility
 
-## Evidence levels
+## Verification levels
 
 | Level | Meaning |
 |---|---|
-| **Reference Verified** | Working behaviour confirmed on the reference Legion Go, and the installer passed isolated install / reinstall / rollback tests |
-| **Experimental** | A working implementation or observed improvement exists, but reliability, compatibility or causality is still under investigation |
-| **Upstream equivalent** | (reported by `check` on a device) Stock SteamOS already provides what the tweak would install. The tweak stays maintained and available, but is skipped there. |
-| **Incompatible** | (reported by `check` on a device) The detected environment cannot safely use the tweak. Nothing is changed. |
+| **Reference Verified** | The exact implementation (or one shown to behave identically) works on the reference Lenovo Legion Go, and its installer passed isolated install / reinstall / failure / rollback tests |
+| **Cross-device Verified** | The same feature was independently verified on another supported SteamOS device. None yet. |
+| **Compatible by capability, untested** | The device has every interface the tweak needs, and `check` allows it, but nobody has tested it there |
+| **Experimental** | A new implementation, variant or hardware-specific behaviour that has not been verified adequately |
+| **Unsupported / not applicable** | A required interface or hardware is missing, or the tweak targets different hardware. `check` explains which. |
 
-No tweak has been tested on a second physical Legion Go. The installers detect the target device instead of assuming the reference device. They depend on none of the reference device's user name, home path, Steam account, language, country, earlier manual changes or patched binaries; the sandboxed tests check this.
+Device-level states printed by `check`:
+- `upstream-equivalent`: stock SteamOS already does it;
+- `incompatible`: a requirement is missing; nothing is changed;
+- `untested`: SteamOS version outside the tested list for hardware tweaks; needs `--force`.
+
+`--force` never overrides missing hardware or security requirements.
 
 ## Reference device
 
 | Component | Version |
 |---|---|
-| Device | Lenovo Legion Go 83E1 ("Legion Go 8APU1"), BIOS N3CN40WW |
-| SteamOS | 3.9.5 (build 20261023.100), kernel 7.2.7-valve2, Plasma 6.7.3 Wayland |
-| steamos-manager | 26.4.1 |
-| InputPlumber | stock 0.78.0; tweak 0.84.0 (glide build) |
+| Device | Lenovo Legion Go 83E1 ("Legion Go 8APU1"), BIOS N3CN40WW, AMD Ryzen Z1 Extreme |
+| SteamOS | 3.9.5 (build 20261023.100), kernel 7.2.7-valve2, Plasma 6.7.3 Wayland, steamos-manager 26.4.1 |
+| Steam client | build 1794536281 |
+| InputPlumber | stock 0.78.0; tweak 0.84.0 glide build |
 | Decky Loader | v3.3.1 · SimpleDeckyTDP v1.0.7 · LegionGoRemapper v0.3.0 (patched) |
 
-## Matrix
+## Device matrix
 
-| Tweak | SteamOS 3.9.5 / Legion Go 83E1 | Other SteamOS | Detection (what `check` looks at) |
-|---|---|---|---|
-| steam-keyboard | Reference Verified (multilingual sync beyond EN/RU: Experimental) | untested (`--force`) | KDE tools, python-gi, Steam installed, debugger flag, uinput; Steam UI hooks at runtime (unsupported hooks switch off individually) |
-| precision-touchpad | Reference Verified | untested | Legion Go DMI; stock InputPlumber profile has a native touchpad interface? (→ `release` upstream equivalent); stock version newer than 0.84 → conflict (no downgrade) |
-| desktop-touchpad | Reference Verified | untested | `wheel` group, busctl; dependency satisfied by stock InputPlumber with a native touchpad driver or by `precision-touchpad` |
-| decky-loader | Reference Verified | untested | Steam installed; existing Decky → `external` (adoptable) |
-| decky-power-plugins | Experimental | untested | Legion Go DMI; Decky; existing plugins → `external` |
-| desktop-power-policy | Experimental (battery measured, AC untested) | untested | `lenovo-wmi-gamezone` platform profile, amd-pstate EPP, python-gi |
-| mic-enhance | Experimental | untested | filter-chain service, CAPS, exactly one internal analog mic node |
+| Tweak | Layer / detection | Legion Go (1st gen) | Steam Deck LCD / OLED | Other handhelds on official SteamOS |
+|---|---|---|---|---|
+| steam-keyboard | portable: Steam + KDE + debugger; input profile detection | Reference Verified | compatible by capability, untested (dual-trackpad typing stays Steam's own) | compatible by capability, untested (dual-joystick bridge only with an InputPlumber virtual Deck controller) |
+| mic-enhance | capability: one internal analog mic node, filter-chain, CAPS | Reference Verified | compatible by capability, untested (EQ tuned for the Legion Go mic) | same |
+| desktop-power-policy | capability: EPP and/or cpufreq boost and/or Lenovo firmware profiles | Reference Verified | compatible by capability, untested (no Lenovo profiles; EPP/boost only if present) | same |
+| decky-loader | portable | Reference Verified | compatible, untested by us (Decky's own primary platform) | compatible, untested |
+| precision-touchpad | Legion Go DMI + InputPlumber features | Reference Verified | not applicable | not applicable |
+| desktop-touchpad | Legion Go DMI | Reference Verified | not applicable (the Deck's trackpads are not managed this way) | not applicable |
+| decky-power-plugins | Legion Go DMI | Reference Verified (setup, SimpleDeckyTDP); LegionGoRemapper features Experimental | not applicable | not applicable |
+
+The project does not claim which handhelds Valve supports. "Official SteamOS" means devices for which Valve publishes SteamOS.
+
+## Version policy
+
+- **Portable tweaks** (`version_policy: feature`) are not blocked on other SteamOS versions. Their checks probe the actual interfaces, and the keyboard script disables individual hooks that a Steam update changed.
+- **Hardware tweaks** (`version_policy: tested`) need `--force` on untested SteamOS versions, because they replace or drive system components.
+
+## Multilingual Input Support (steam-keyboard)
+
+| Steam keyboard layout | Handling | Status |
+|---|---|---|
+| English (qwerty), Russian | KDE layout synced; physical long-press symbols; restore on Hide | Reference Verified (v41, 2026-11-23) |
+| German, French, Spanish, Italian, Portuguese, Polish, Czech, Danish, Finnish, Norwegian, Swedish, Hungarian, Romanian, Greek, Ukrainian, Bulgarian (+ phonetic), Turkish Q/F, US-International, Dvorak, Colemak | KDE layout synced when configured in KDE; Steam's long-press popup | same code path as EN/RU; not tested by native speakers |
+| Chinese (all), Japanese (all), Korean, Vietnamese | Steam's IBus input method / native path, untouched | Steam native behaviour |
+| Right-to-left scripts | not offered by Steam's keyboard | — |
 
 ## What can break after updates
 
@@ -44,15 +66,6 @@ No tweak has been tested on a second physical Legion Go. The installers detect t
 | desktop-power-policy | `lenovo-wmi-gamezone`, EPP sysfs, logind/UPower | Logs the missing interface and changes nothing |
 | mic-enhance | PipeWire filter-chain, CAPS, ALSA node naming | Re-run install to detect the new node; the raw microphone keeps working |
 
-## Multilingual Input Support (steam-keyboard)
-
-| Steam keyboard layout | Handling | Status |
-|---|---|---|
-| English (qwerty), Russian | KDE layout synced (`us`, `ru`); physical long-press symbols | Reference Verified |
-| German, French, Spanish, Italian, Portuguese, Polish, Czech, Danish, Finnish, Norwegian, Swedish, Hungarian, Romanian, Greek, Ukrainian, Bulgarian (+ phonetic), Turkish Q/F, US-International, Dvorak, Colemak | KDE layout synced when that layout is configured in KDE; Steam's own long-press popup | Experimental (same mechanism, not tested by native speakers) |
-| Chinese (all), Japanese (all), Korean, Vietnamese | Steam's own IBus input method / native path, untouched; KDE stays on your layout | Steam native behaviour |
-| Right-to-left scripts | Not offered by Steam's keyboard | — |
-
 ## Interaction with other software
 
 - Decky Loader and `steam-keyboard` share Steam's debugger flag (reference counted).
@@ -61,4 +74,6 @@ No tweak has been tested on a second physical Legion Go. The installers detect t
 
 ## Not supported
 
-Legion Go S, Legion Go 2, other handhelds, other distributions (Bazzite, ChimeraOS, ...), X11 Plasma sessions (not tested).
+- Hardware tweaks on anything other than the Lenovo Legion Go (1st gen).
+- Other distributions (Bazzite, ChimeraOS, ...).
+- X11 Plasma sessions (not tested).

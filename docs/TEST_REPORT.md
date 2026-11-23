@@ -1,19 +1,19 @@
-# Test report — v0.2.0
+# Test report — v0.2.2-beta
 
-Generated 2026-11-23 on the reference Legion Go (SteamOS 3.9.5). The evidence categories are kept separate: passing installer tests or CI is **not** hardware verification.
+Generated 2026-11-24 on the reference Legion Go (SteamOS 3.9.5). The evidence categories are kept separate: passing installer tests or CI is **not** hardware verification.
 
 ## A. Static validation (`tests/run-tests.sh static`, also in GitHub Actions)
 
 - Bash syntax of all scripts; Python syntax of all Python files.
 - ShellCheck (warning level) over every script, including `lib/doctor.sh` and `experimental/`: **0 findings**.
-- Manifest schema, ids, allowed statuses (Reference Verified / Experimental), dependencies.
+- Manifest schema (layer, category, hardware, version policy), ids, allowed statuses (Reference Verified / Cross-device Verified / Experimental / Unsupported), dependencies; Legion Go tweaks must be in the hardware layer.
 - Tweak structure, executable bits, and the ten required README sections.
 - Module isolation: no tweak references another tweak's files.
 - Secret / personal-data scan: keys, tokens, password assignments and home paths, plus a local git-ignored list of personal strings. **No findings.**
 
 ## B. Simulated installation (sandboxed: mock root, stub system commands, real pinned upstream artifacts)
 
-Final run: **103 passed, 0 failed, 0 skipped.** Covered:
+Final run: **128 passed, 0 failed, 0 skipped** (locally, with all pinned upstream artifacts; GitHub Actions runs the same suite). Covered:
 
 - First install, verification, idempotent re-install, uninstall: all seven tweaks.
 - User-edited files kept on uninstall and reported as `partial`; replaced files restored with their original mode.
@@ -33,6 +33,15 @@ Final run: **103 passed, 0 failed, 0 skipped.** Covered:
 - `doctor` runs and prints no home path.
 - Multilingual Input Support: KDE layout/variant matching and the language report (`tests/test_lgk_helper.py`); `LG_KEYBOARD_LAYOUTS` adds layouts with variants and restores them on uninstall.
 - Unsupported device / untested SteamOS / `--force`; external setup detection, adoption without changes, uninstall of adopted setups.
+
+- New in v0.2.2-beta:
+  - **verification is authoritative**: a failing functional check exits non-zero and rolls back files and KDE settings;
+  - `status` reports working / not working;
+  - **InputPlumber launcher**: normal start, no downgrade when stock is newer, fallback after a crash loop (and it is logged), broken build → stock, emergency restore script installed;
+  - **cross-device**: portable and capability tweaks are installable on a non-Legion device, Legion Go tweaks are incompatible there with an explanation, and `--force` cannot bypass hardware;
+  - the power policy is incompatible without any power interface;
+  - **input profiles**: dual-joystick, dual-trackpad, touchscreen;
+  - **version policy**: tested vs feature.
 
 Individual results:
 
@@ -79,9 +88,19 @@ Individual results:
 - steam-keyboard: adopted unit disabled
 - unsupported device -> precision-touchpad incompatible
 - unsupported device -> install refused
-- untested SteamOS -> state untested
-- untested SteamOS -> install needs --force
-- untested SteamOS -> --force installs
+- other device -> steam-keyboard (portable) installable
+- other device -> mic-enhance (capability) installable
+- other device -> desktop-power-policy installable when EPP/boost exist
+- other device -> legion-go tweaks incompatible
+- other device -> check explains why
+- other device without any power interface -> desktop-power-policy incompatible
+- --force does not bypass missing hardware
+- input profiles: InputPlumber virtual Deck controller + touchscreen
+- input profiles: Steam Deck controller -> dual-trackpad (bridge stays off)
+- untested SteamOS -> 'tested'-policy tweak reports untested
+- untested SteamOS -> 'tested'-policy install needs --force
+- untested SteamOS -> 'feature'-policy tweak decided by feature checks
+- untested SteamOS -> feature-policy install works
 - precision-touchpad: stock 0.78 path -> installable
 - native stock driver + release variant -> upstream-equivalent
 - native stock driver + glide variant -> still installable (tap filter)
@@ -136,42 +155,49 @@ Individual results:
 - decky: plugins, binary and unit removed
 - transaction: failing plugin install fails
 - transaction: dependency installed in the same command rolled back
+- verify: failing functional check -> install exits nonzero
+- verify: failed install is rolled back (no files, no state)
+- verify: KDE setting restored after the failed install
+- verify: healthy install passes verification
+- status: reports the tweak as working
+- status: reports a stopped service as not working
+- verify: mic-enhance verified
+- launcher: runs the maintained build normally
+- launcher: stock newer than the build -> stock (no downgrade)
+- launcher: 4 starts within 180 s -> stock until reboot
+- launcher: crash-loop fallback is logged
+- launcher: broken build -> stock
+- precision-touchpad: no controller exposed -> verification fails, rolled back
+- precision-touchpad: nothing left after failed verification
+- precision-touchpad: emergency restore script installed
 - multilingual: helper layout matching and language report
 - lib: replaced file restored with original content
 - lib: replaced file restored with original mode
 
-## C. Existing reference-device evidence (development sessions)
+## C. Reference-device evidence (physical, the reference Legion Go)
 
-| Tweak | Evidence |
-|---|---|
-| steam-keyboard | All features confirmed by the owner. Tab/Shift+Tab: trusted Chrome key events and live typing. EN/RU input in Chrome and RustDesk. |
-| precision-touchpad | 42 → 106 Hz. Taps ≥ 5 px: 36 % → 7 % (tapfilter, 138 taps), 35 % (glide, 118 taps). glide in daily use since 2026-11-16. |
-| desktop-touchpad | Steam exit → pad works; Steam restart → no double movement (owner). |
-| decky-loader | v3.3.1 running since 2026-11-14; binary identical to the pinned release. |
-| decky-power-plugins | SimpleDeckyTDP settings read back after the first apply; touchpad and LED state unchanged after LegionGoRemapper load. Controller features not tested. |
-| desktop-power-policy | 7.86 → 7.11 W on battery at idle; 22 suspend/resume cycles logged. AC path untested. |
-| mic-enhance | Default source in daily use; tuned by ear. |
+| Tweak | Evidence | Status |
+|---|---|---|
+| steam-keyboard | v40 (all features) confirmed by the owner over weeks; Tab/Shift+Tab via trusted Chrome events. **v41 live check 2026-11-23:** Russian and English typed as real keys in Chrome, Tab, Shift+Tab via the on-screen Shift, language switch → KDE layout follows (confirmed back), Hide → own layout restored, reopen → synced, no unsupported hooks. The controller bridge is byte-identical to v40. | Reference Verified |
+| precision-touchpad | 42 → 106 Hz; taps ≥ 5 px: 36 % → 7 % (tapfilter); glide in daily use since 2026-11-16; published binaries bit-identical to the device builds | Reference Verified |
+| desktop-touchpad | Steam exit/restart checked by the owner; 6 automatic hand-over cycles and 4 re-enumerations logged, 0 failures | Reference Verified |
+| desktop-power-policy | battery −0.75 W idle; 7 AC switches + 46 battery applications logged, 0 errors; 22+ resumes | Reference Verified |
+| mic-enhance | default input in daily use | Reference Verified |
+| decky-loader | v3.3.1 running since 2026-11-14 | Reference Verified |
+| decky-power-plugins | safe first start read back; SimpleDeckyTDP per-game profile in use. LegionGoRemapper controller features never enabled. | Reference Verified / Experimental (those features) |
 
-## D. Verification done for this release on the reference device
+## D. Done for this release on the reference device
 
-- **Reproducible builds:** glide and tapfilter InputPlumber rebuilt from the pristine v0.84.0 source plus our patches are bit-identical to the device-tested binaries. The LegionGoRemapper v0.3.0 release plus our patch is byte-identical to the installed plugin.
-- **Read-only `list`, `doctor`, `check`:** all modules were detected correctly, including Decky Loader and the plugins as `external`.
-- **Adoption of `decky-loader` and `decky-power-plugins`:** 75 files compared, none changed, service still active. (The other five were adopted in v0.1.0; 163 files unchanged.)
-- **Multilingual Input Support, controlled live check:**
-  1. v41 was loaded into the running Steam client.
-  2. It detected the enabled Steam layouts `[qwerty → us, russian → ru]` and tracked the current language, with no unsupported hooks.
-  3. Nothing was typed. The installed v40 was restored immediately and the KDE layout returned to `us`.
+- **Read-only `list`, `status` (with functional verification) and `doctor`:** all seven tweaks report `working: yes`.
+- **Resource audit (idle, 60 s):** keyboard helper, hand-over, power policy and mic filter at 0.00 % CPU. InputPlumber stock vs 0.84 release vs glide compared using temporary runtime drop-ins; the original setup was restored and checked.
+- **CPU boost on/off:** power and benchmark on battery. Boost was restored to on.
+- **Keyboard v41:** run from a scratch copy, then the installed v40 restored (service active, v40 re-injected, KDE layout `us`, test KWin script unloaded).
+- **Device configuration backup:** `~/.local/state/legiongo-steamos/device-backups/`.
 
-## Still requires physical checks (not performed)
+## Not verified (genuinely open)
 
-- steam-keyboard v41 end-to-end with the new helper:
-  1. Switch EN ↔ RU with 🌐 and type in Chrome.
-  2. Hide the keyboard: the KDE layout returns to your own.
-  3. A language without a KDE layout appears in `status`.
-  4. Tab in Russian; Hide after Tab; rapid Tab.
-- Other Steam keyboard languages (German, French, ...) by native speakers.
-- precision-touchpad: double-tap and tap-and-drag with patched builds; Gaming Mode.
-- desktop-touchpad: Steam crash, resume, Gaming → Desktop.
-- desktop-power-policy: AC path.
-- decky-power-plugins: LegionGoRemapper remapping, fan curves, charge limit.
-- A fresh install on a second Legion Go: none is available. The installers were designed and tested to depend on nothing specific to the reference device.
+- Any feature on a second physical device: no Cross-device Verified entries yet.
+- Other Steam keyboard languages by native speakers.
+- LegionGoRemapper remapping, RGB, fan curves and charge limit.
+- Power draw on AC, browser workloads, and the battery cost of InputPlumber 0.84's extra CPU.
+- The new launcher fallbacks (crash loop, newer stock) on hardware: they are tested in the sandbox with fake binaries and never triggered on the device.
