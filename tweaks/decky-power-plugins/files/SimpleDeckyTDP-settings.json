@@ -1,0 +1,15 @@
+{
+  "supportsRyzenadjCoall": false,
+  "enableTdpProfiles": false,
+  "tdpProfiles": {
+    "default": {
+      "tdp": 25,
+      "cpuBoost": true,
+      "smt": true,
+      "gpuMode": "BALANCE",
+      "powerControls": {
+        "amd-pstate-epp": { "epp": "balance_performance", "powerGovernor": "powersave" }
+      }
+    }
+  }
+}

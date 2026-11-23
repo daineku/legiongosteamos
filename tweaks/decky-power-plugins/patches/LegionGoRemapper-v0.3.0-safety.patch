@@ -1,0 +1,86 @@
+# Safety patch for LegionGoRemapper v0.3.0 (BSD-3-Clause, (c) 2023 Aarron Lee), maintained by legiongo-steamos.
+# Apply inside the extracted release directory: git apply -p1 <this file>
+--- a/main.py	2026-03-12 09:53:13.000000000 +0700
++++ b/main.py	2026-11-16 02:53:56.743458469 +0700
+@@ -134,8 +134,15 @@
+                         active_fan_profile = fan_profile
+ 
+                 enable_full_fan_speed = active_fan_profile.get("fullFanSpeedEnabled", False)
+-                del active_fan_profile['fullFanSpeedEnabled']
+-                active_fan_curve = list(active_fan_profile.values())
++                # legiongo-steamos: build the curve in fixed temperature order without mutating the
++                # stored profile; validate 0..115 and never go below the plugin's own default curve at >=70 C
++                floor = {"70": 70, "80": 80, "90": 95, "100": 100}
++                active_fan_curve = []
++                for k in ("10", "20", "30", "40", "50", "60", "70", "80", "90", "100"):
++                    v = active_fan_profile.get(k)
++                    if not isinstance(v, int) or not 0 <= v <= 115:
++                        raise ValueError(f"invalid fan curve point {k}: {v!r}")
++                    active_fan_curve.append(max(v, floor.get(k, 0)))
+ 
+                 if not enable_full_fan_speed:
+                     legion_space.set_full_fan_speed(False)
+@@ -150,7 +157,17 @@
+ 
+             return True
+         except Exception as e:
+-            decky_plugin.logger(f'save_fan_settings error {e}')
++            decky_plugin.logger.error(f'save_fan_settings error {e}')
++            # legiongo-steamos: on any error fall back to firmware cooling
++            try:
++                if settings.supports_custom_fan_curves():
++                    legion_space.set_full_fan_speed(False)
++                    sleep(0.5)
++                    legion_space.set_tdp_mode("performance")
++                    sleep(0.5)
++                    legion_space.set_tdp_mode("custom")
++            except Exception as e2:
++                decky_plugin.logger.error(f'fan restore failed {e2}')
+             return False
+ 
+     # sync state in settings.json to actual controller RGB hardware
+@@ -221,6 +238,16 @@
+     # Function called first during the unload process, utilize this to handle your plugin being removed
+     async def _unload(self):
+         decky_plugin.logger.info("Goodbye World!")
++        # legiongo-steamos: never leave a custom fan curve behind when the plugin stops
++        try:
++            if settings.get_settings().get('customFanCurvesEnabled', False) and settings.supports_custom_fan_curves():
++                legion_space.set_full_fan_speed(False)
++                sleep(0.5)
++                legion_space.set_tdp_mode("performance")
++                sleep(0.5)
++                legion_space.set_tdp_mode("custom")
++        except Exception as e:
++            decky_plugin.logger.error(f'unload fan restore failed {e}')
+         legion_go2_brightness.stop_backlight_watcher()
+         if hasattr(self, '_backlight_task'):
+             self._backlight_task.cancel()
+--- a/py_modules/controllers.py	2026-03-12 09:53:13.000000000 +0700
++++ b/py_modules/controllers.py	2026-11-16 02:53:48.281357000 +0700
+@@ -27,10 +27,11 @@
+ 
+ def sync_touchpad(current_game_id):
+     settings = controller_settings.get_settings()
+-    controller_profile = settings.get('controller').get(current_game_id, {})
++    # legiongo-steamos: a missing profile/key must never switch the touchpad OFF
++    controller_profile = (settings.get('controller') or {}).get(current_game_id) or {}
+ 
+     try:
+-        new_touchpad_state = bool(controller_profile.get('TOUCHPAD'))
++        new_touchpad_state = bool(controller_profile.get('TOUCHPAD', True))
+         t_toggle = legion_configurator.create_touchpad_command(new_touchpad_state)
+         legion_configurator.send_command(t_toggle)
+     except Exception as e:
+--- a/py_modules/rgb.py	2026-03-12 09:53:13.000000000 +0700
++++ b/py_modules/rgb.py	2026-11-16 02:53:48.281472041 +0700
+@@ -7,6 +7,9 @@
+ # sync the state of the RGB lights to the values in settings.json
+ def sync_rgb_settings(current_game_id):
+     s = settings.get_settings()
++    # legiongo-steamos: never touch the LEDs (e.g. switch them off) unless the user enabled RGB control
++    if s.get('enableRgbControl', False) is not True or not (s.get('rgb') or {}).get(current_game_id):
++        return
+     # Lenovo diabled the ability to set LEDs per left/right controller
+     # enable_separate_rgb_management = s.get('forceEnableSeparateLedManagement', False)
+ 

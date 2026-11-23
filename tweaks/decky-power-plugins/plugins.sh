@@ -1,0 +1,10 @@
+# shellcheck shell=bash
+# shellcheck disable=SC2034  # constants used by the scripts that source this file
+# Pinned upstream plugin releases (both BSD-3-Clause, by Aarron Lee). SHA-256 = GitHub release asset digests.
+SDTDP_VERSION=v1.0.7
+SDTDP_URL="https://github.com/aarron-lee/SimpleDeckyTDP/releases/download/$SDTDP_VERSION/SimpleDeckyTDP.zip"
+SDTDP_SHA=dae7cf43ec8936c07a94a08ac418be8d9e129744a54f3aa63d2b31222bc0ad38
+LGR_VERSION=v0.3.0
+LGR_URL="https://github.com/aarron-lee/LegionGoRemapper/releases/download/$LGR_VERSION/LegionGoRemapper.tar.gz"
+LGR_SHA=b89084ece2df8854a732239043484f510a2384d01221441e3a4242fc85b6d9e1
+HB="$HOME/homebrew"

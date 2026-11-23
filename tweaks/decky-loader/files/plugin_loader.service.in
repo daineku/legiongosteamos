@@ -1,0 +1,16 @@
+[Unit]
+Description=SteamDeck Plugin Loader
+After=network.target
+[Service]
+Type=simple
+User=root
+Restart=always
+KillMode=process
+TimeoutStopSec=15
+ExecStart=@USER_HOME@/homebrew/services/PluginLoader
+WorkingDirectory=@USER_HOME@/homebrew/services
+Environment=UNPRIVILEGED_PATH=@USER_HOME@/homebrew
+Environment=PRIVILEGED_PATH=@USER_HOME@/homebrew
+Environment=LOG_LEVEL=INFO
+[Install]
+WantedBy=multi-user.target
