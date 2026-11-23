@@ -37,9 +37,8 @@ static_tests() {
     for d in "$REPO"/tweaks/*/; do
         for s in README.md manifest.json check.sh install.sh uninstall.sh; do [ -f "$d$s" ] || { bad=1; echo "    missing $d$s"; }; done
         for s in check.sh install.sh uninstall.sh adopt.sh status.sh; do [ -f "$d$s" ] && [ ! -x "$d$s" ] && { bad=1; echo "    not executable: $d$s"; }; done
-        for h in "## What It Does" "## Why You Need It" "## Before vs After" "## How It Improves Legion Go" \
-                 "## Install — One Command" "## Uninstall — One Command" "## How to Check It Works" "## Dependencies" \
-                 "## Compatibility" "## Known Limitations"; do
+        for h in "## Overview" "## Problem" "## Enhancement" "## User benefit" "## Compatibility" "## Installation" \
+                 "## Verification" "## Uninstallation" "## Performance" "## Limitations" "## Technical details"; do
             grep -qF "$h" "$d/README.md" 2>/dev/null || { bad=1; echo "    $d/README.md lacks '$h'"; }
         done
     done
@@ -312,6 +311,38 @@ sim_tests() {
     rm -f "$SANDBOX/fail-active"
     new_sandbox
     t "verify: mic-enhance verified" lg install mic-enhance
+
+    # --- installer state model: Verified / Verification Pending / Failed
+    new_sandbox
+    sed -i 's/interface_num: 2/interface_num: 1/' "$LG_ROOT/usr/share/inputplumber/devices/50-legion_go.yaml"
+    out=$(XDG_CURRENT_DESKTOP='' "$REPO/legiongo.sh" install desktop-touchpad < /dev/null 2>&1); rc=$?
+    t "state model: untestable verification -> exit 0" test "$rc" = 0
+    t "state model: reported as INSTALLED — VERIFICATION PENDING, never as verified" bash -c "printf '%s' \"\$1\" | grep -q 'VERIFICATION PENDING' && ! printf '%s' \"\$1\" | grep -q 'INSTALLED & VERIFIED'" _ "$out"
+    t "state model: pending recorded in state" grep -q '^verification=pending' "$LG_STATE/desktop-touchpad/state"
+    t "state model: status shows pending outside Desktop Mode" bash -c "XDG_CURRENT_DESKTOP='' $REPO/legiongo.sh status desktop-touchpad | grep -q 'verification pending'"
+    t "state model: healthy result reported as INSTALLED & VERIFIED" bash -c "$REPO/legiongo.sh install desktop-touchpad < /dev/null | grep -q 'INSTALLED & VERIFIED'"
+    t "state model: verified recorded in state" grep -q '^verification=verified' "$LG_STATE/desktop-touchpad/state"
+    touch "$SANDBOX/fail-active"
+    t "doctor: shows a broken tweak as BROKEN with a repair hint" bash -c "$REPO/legiongo.sh doctor | grep -q 'desktop-touchpad .*BROKEN' && $REPO/legiongo.sh doctor | grep -q 'update desktop-touchpad'"
+    touch "$SANDBOX/journal-fail"; rm -f "$SANDBOX/fail-active"
+    out=$("$REPO/legiongo.sh" update desktop-touchpad < /dev/null 2>&1); rc=$?
+    t "update: intact files but failing function -> not 'up to date'" bash -c "printf '%s' \"\$1\" | grep -q 'functional check FAILS'" _ "$out"
+    t "update: failed repair exits nonzero and rolls back" bash -c "[ $rc != 0 ] && [ ! -e '$LG_STATE/desktop-touchpad/state' ]"
+    rm -f "$SANDBOX/journal-fail"
+
+    # --- portable CPU boost capabilities
+    new_sandbox 3.9.5 21XX
+    rm -f "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference"; rm -rf "$LG_ROOT/sys/class/platform-profile"
+    mkdir -p "$LG_ROOT/sys/devices/system/cpu/intel_pstate"; echo 1 > "$LG_ROOT/sys/devices/system/cpu/intel_pstate/no_turbo"
+    t "boost: Intel no_turbo alone is a supported capability" test "$(state_of desktop-power-policy)" = not-installed
+    rm -rf "$LG_ROOT/sys/devices/system/cpu/intel_pstate"; mkdir -p "$LG_ROOT/sys/devices/system/cpu/cpufreq"; echo 1 > "$LG_ROOT/sys/devices/system/cpu/cpufreq/boost"
+    t "boost: global cpufreq boost alone is a supported capability" test "$(state_of desktop-power-policy)" = not-installed
+    echo 0 > "$LG_ROOT/sys/devices/system/cpu/cpufreq/boost"
+    lg install desktop-power-policy >/dev/null 2>&1
+    t "boost: previous global boost state recorded" grep -q '^global_boost_before=0' "$LG_STATE/desktop-power-policy/state"
+    lg uninstall desktop-power-policy >/dev/null 2>&1
+    t "boost: global boost restored to its previous value on uninstall" test "$(cat "$LG_ROOT/sys/devices/system/cpu/cpufreq/boost")" = 0
+    t "boost: policy logic on fake AMD/Intel sysfs (no max clocks, nothing in Gaming Mode)" python3 -I "$REPO/tests/test_power_policy.py" "$REPO/tweaks/desktop-power-policy/files/legion-power-policy.py.in"
 
     # --- InputPlumber launcher: fallback, crash-loop protection, no downgrade
     new_sandbox
