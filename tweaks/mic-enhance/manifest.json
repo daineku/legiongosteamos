@@ -1,0 +1,12 @@
+{
+  "id": "mic-enhance",
+  "name": "Enhanced Internal Microphone",
+  "version": "1.0.0",
+  "status": "Experimental",
+  "scope": "Desktop + Gaming (user audio)",
+  "requires_root": false,
+  "depends": [],
+  "tested_steamos": ["3.9.5"],
+  "summary": "Adds an 'Enhanced Microphone' input built with PipeWire's own filter-chain: high-pass at 85 Hz, gentle warmth and presence EQ, a soft compressor and a safety clamp against clipping, and makes it the default input. Uses only components that ship with SteamOS; the original microphone stays available.",
+  "restart": "Nothing. Select 'Enhanced Microphone' as input in apps that do not follow the system default."
+}
