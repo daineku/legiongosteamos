@@ -1,0 +1,10 @@
+{
+  "_comment": "Upstream versions this project has reviewed. Updated by hand after hardware review only (docs/MAINTAINING.md). The upstream-watch workflow reads this file and opens review issues for newer releases; it never edits it.",
+  "components": [
+    {"repo": "ShadowBlip/InputPlumber", "pinned": "v0.84.0", "tweak": "precision-touchpad", "reviewed": "2026-11-23", "notes": "patches rebuilt bit-identical; stock SteamOS 3.9.5 ships 0.78.0"},
+    {"repo": "SteamDeckHomebrew/decky-loader", "pinned": "v3.3.1", "tweak": "decky-loader", "reviewed": "2026-11-23", "notes": "runs on the reference device"},
+    {"repo": "aarron-lee/SimpleDeckyTDP", "pinned": "v1.0.7", "tweak": "decky-power-plugins", "reviewed": "2026-11-23", "notes": "settings overlay only"},
+    {"repo": "aarron-lee/LegionGoRemapper", "pinned": "v0.3.0", "tweak": "decky-power-plugins", "reviewed": "2026-11-23", "notes": "safety patch applies; byte-identical to the reference install"}
+  ],
+  "steamos": {"tested": ["3.9.5"], "kernel": "7.2.7-valve2", "plasma": "6.7.3"}
+}

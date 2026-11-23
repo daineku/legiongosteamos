@@ -58,6 +58,11 @@ case "$1" in
   set-card-profile) echo "profile=$3" >> "$st" ;;
 esac
 EOF
+    cat > "$d/id" <<'EOF'
+#!/bin/bash
+# the sandbox user counts as a member of "wheel" (InputPlumber's polkit group on SteamOS)
+if [ "$*" = "-nG" ]; then echo "$(/usr/bin/id -nG) wheel"; else exec /usr/bin/id "$@"; fi
+EOF
     cat > "$d/pw-dump" <<'EOF'
 #!/bin/bash
 echo '[{"type":"PipeWire:Interface:Node","info":{"props":{"node.name":"alsa_input.pci-0000_c2_00.6.analog-stereo"}}}]'
@@ -73,6 +78,9 @@ make_root() {
     echo "$product" > "$r/sys/class/dmi/id/product_name"
     [ "$product" = 83E1 ] && echo "Legion Go 8APU1" > "$r/sys/class/dmi/id/product_version" || echo "Other" > "$r/sys/class/dmi/id/product_version"
     printf 'NAME="SteamOS"\nPRETTY_NAME="SteamOS"\nID=steamos\nVERSION_ID=%s\n' "$ver" > "$r/etc/os-release"
+    mkdir -p "$r/usr/share/inputplumber/devices"
+    # stock 0.78-style Legion profile: no native touchpad interface (interface_num: 1) entries
+    printf 'name: Lenovo Legion Go\nsource_devices:\n  - group: gamepad\n    hidraw:\n      interface_num: 2\n' > "$r/usr/share/inputplumber/devices/50-legion_go.yaml"
     touch "$r/usr/lib/systemd/system/inputplumber.service" "$r/usr/lib/systemd/system/upower.service" \
           "$r/usr/lib/systemd/user/filter-chain.service" "$r/usr/lib/ladspa/caps.so" "$r/dev/uinput"
     echo lenovo-wmi-gamezone > "$r/sys/class/platform-profile/platform-profile-0/name"

@@ -1,0 +1,30 @@
+name: Upstream watch
+# Weekly: report new upstream releases that need a compatibility review.
+# It only opens or updates issues. It never edits the repository, marks versions compatible or publishes builds.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare pinned versions with the latest upstream releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jq -c '.components[]' compat/upstream.json | while read -r c; do
+            repo=$(jq -r .repo <<<"$c"); pinned=$(jq -r .pinned <<<"$c"); tweak=$(jq -r .tweak <<<"$c")
+            latest=$(gh api "repos/$repo/releases/latest" --jq .tag_name 2>/dev/null || echo "")
+            [ -n "$latest" ] && [ "$latest" != "$pinned" ] || { echo "$repo: $pinned is current"; continue; }
+            title="Compatibility review: $repo $latest (pinned $pinned)"
+            if gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number' | grep -q .; then
+              echo "$repo: review issue already open"; continue
+            fi
+            body=$(printf 'Upstream released **%s** of %s (we pin **%s**, used by `%s`).\n\nReview checklist (docs/MAINTAINING.md section 2):\n- [ ] read the changelog and diff of the parts we patch or configure\n- [ ] test upstream natively on hardware; does it now provide our improvement?\n- [ ] compare native vs ours, check regressions (click, tap, drag, resume, Gaming Mode)\n- [ ] rebase patches / rebuild if still useful; publish builds only after hardware testing\n- [ ] update compat/upstream.json, docs/COMPATIBILITY.md, tested versions\n\nThis issue was opened automatically. The new version is **not** considered compatible until reviewed.\n\nRelease: https://github.com/%s/releases/tag/%s' "$latest" "$repo" "$pinned" "$tweak" "$repo" "$latest")
+            gh issue create --title "$title" --body "$body" || echo "could not open issue for $repo"
+          done

@@ -1,0 +1,33 @@
+name: CI
+# Static validation and sandboxed installer tests. This does NOT verify behaviour on Legion Go hardware.
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq shellcheck python3-gi gir1.2-atspi-2.0 unzip
+      - name: Fetch pinned upstream artifacts for the sandboxed install tests
+        run: |
+          mkdir -p "$RUNNER_TEMP/up" && cd "$RUNNER_TEMP/up"
+          curl -fsSLO https://github.com/ShadowBlip/InputPlumber/releases/download/v0.84.0/inputplumber-x86_64.tar.gz
+          curl -fsSLo PluginLoader https://github.com/SteamDeckHomebrew/decky-loader/releases/download/v3.3.1/PluginLoader
+          curl -fsSLO https://github.com/aarron-lee/SimpleDeckyTDP/releases/download/v1.0.7/SimpleDeckyTDP.zip
+          curl -fsSLO https://github.com/aarron-lee/LegionGoRemapper/releases/download/v0.3.0/LegionGoRemapper.tar.gz
+          sha256sum -c - <<'SUMS'
+          1626fb223808bf4dd5f2c9476c8ee6b3803090168f79ee52dcd6fea20252457a  inputplumber-x86_64.tar.gz
+          7bb73b0502c49e7194f34f9ce4ddb6777764e9277d7a5e54665f66460d50c315  PluginLoader
+          dae7cf43ec8936c07a94a08ac418be8d9e129744a54f3aa63d2b31222bc0ad38  SimpleDeckyTDP.zip
+          b89084ece2df8854a732239043484f510a2384d01221441e3a4242fc85b6d9e1  LegionGoRemapper.tar.gz
+          SUMS
+      - name: Run tests
+        run: |
+          export LG_TEST_IP_TARBALL="$RUNNER_TEMP/up/inputplumber-x86_64.tar.gz" LG_TEST_DECKY_BINARY="$RUNNER_TEMP/up/PluginLoader" \
+                 LG_TEST_SDTDP_ZIP="$RUNNER_TEMP/up/SimpleDeckyTDP.zip" LG_TEST_LGR_TARBALL="$RUNNER_TEMP/up/LegionGoRemapper.tar.gz"
+          git config --global user.email ci@example.invalid && git config --global user.name ci
+          tests/run-tests.sh
