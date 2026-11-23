@@ -25,6 +25,17 @@ jobs:
           dae7cf43ec8936c07a94a08ac418be8d9e129744a54f3aa63d2b31222bc0ad38  SimpleDeckyTDP.zip
           b89084ece2df8854a732239043484f510a2384d01221441e3a4242fc85b6d9e1  LegionGoRemapper.tar.gz
           SUMS
+      - name: Fetch the published patched InputPlumber builds (precision-touchpad variant tests)
+        run: |
+          mkdir -p tweaks/precision-touchpad/build/out && cd tweaks/precision-touchpad/build/out
+          for v in glide tapfilter; do
+            curl -fsSLO "https://github.com/daineku/legiongosteamos/releases/download/inputplumber-0.84.0-patches-1/inputplumber-0.84.0-$v"
+          done
+          chmod +x inputplumber-0.84.0-*
+          sha256sum -c - <<'SUMS'
+          2fed277f1c150c32017a2beda653c2e0fecfefac4aa3587a43e68d69daaf6fc9  inputplumber-0.84.0-glide
+          9f3d5c1bafd45d5cc46b67972785dd1f06af8e5fb34289bbcdc285be1af67cd1  inputplumber-0.84.0-tapfilter
+          SUMS
       - name: Run tests
         run: |
           export LG_TEST_IP_TARBALL="$RUNNER_TEMP/up/inputplumber-x86_64.tar.gz" LG_TEST_DECKY_BINARY="$RUNNER_TEMP/up/PluginLoader" \
