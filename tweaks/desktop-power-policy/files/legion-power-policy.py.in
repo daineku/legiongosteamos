@@ -364,6 +364,12 @@ class Policy:
                 b = os.path.join(CPU, c, "cpufreq", "boost")
                 if rd(b) == "0":
                     ok &= wr(b, "1")
+        # CPU boost on other CPUs/drivers (no-ops where the file is absent or already enabled):
+        # global cpufreq boost switch (acpi-cpufreq, amd-pstate) and Intel turbo (intel_pstate no_turbo)
+        if rd(os.path.join(CPU, "cpufreq", "boost")) == "0":
+            ok &= wr(os.path.join(CPU, "cpufreq", "boost"), "1")
+        if rd(os.path.join(CPU, "intel_pstate", "no_turbo")) == "1":
+            ok &= wr(os.path.join(CPU, "intel_pstate", "no_turbo"), "0")
         if rd(os.path.join(CPU, "smt", "control")) == "off":
             ok &= wr(os.path.join(CPU, "smt", "control"), "on")
         if rd(GPU_LEVEL) not in (None, "auto"):

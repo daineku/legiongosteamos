@@ -24,6 +24,8 @@ if [ "$bb" = 0 ]; then
     for f in "$LG_ROOT"/sys/devices/system/cpu/cpu*/cpufreq/boost; do printf 0 | lg_root tee "$f" >/dev/null 2>&1 || true; done
     lg_ok "CPU boost restored to off (as before installation)"
 fi
+[ "$(lg_state_get global_boost_before)" = 0 ] && printf 0 | lg_root tee "$LG_ROOT/sys/devices/system/cpu/cpufreq/boost" >/dev/null 2>&1 && lg_ok "global CPU boost restored to off"
+[ "$(lg_state_get no_turbo_before)" = 1 ] && printf 1 | lg_root tee "$LG_ROOT/sys/devices/system/cpu/intel_pstate/no_turbo" >/dev/null 2>&1 && lg_ok "Intel turbo restored to off"
 lg_info "Evidence logs in /var/log/legion-power were kept (delete them with: sudo rm -r /var/log/legion-power)."
 lg_state_archive
 [ "$kept" = 0 ]

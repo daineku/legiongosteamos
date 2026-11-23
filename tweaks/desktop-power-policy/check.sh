@@ -14,9 +14,11 @@ else lg_info "no Lenovo firmware profile interface: firmware profile switching i
 if [ -e "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference" ]; then
     lg_ok "CPU energy preference (EPP, $(cat "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver" 2>/dev/null || echo cpufreq))"; caps=$((caps + 1))
 else lg_info "no EPP interface: energy preference is skipped"; fi
-if [ -e "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/boost" ]; then
-    lg_ok "CPU boost control (per-policy cpufreq boost): kept on in Desktop Mode"; caps=$((caps + 1))
-else lg_info "no per-policy CPU boost control: boost is left as it is"; fi
+C="$LG_ROOT/sys/devices/system/cpu"
+if [ -e "$C/cpu0/cpufreq/boost" ] || [ -e "$C/cpufreq/boost" ] || [ -e "$C/intel_pstate/no_turbo" ]; then
+    lg_ok "CPU boost control ($( { [ -e "$C/cpu0/cpufreq/boost" ] && echo per-policy; [ -e "$C/cpufreq/boost" ] && echo global; [ -e "$C/intel_pstate/no_turbo" ] && echo intel_pstate; } | paste -sd' ' -)): kept on in Desktop Mode"
+    caps=$((caps + 1))
+else lg_info "no CPU boost control: boost is left as it is"; fi
 [ "$caps" -gt 0 ] || { lg_error "none of the power interfaces this policy uses exists on this device"; LG_FAIL=1; }
 lg_req "python3 with GObject introspection (Gio)" lg_python_gi Gio 2.0
 lg_req_soft "UPower service (battery/AC detection)" test -e "$LG_ROOT/usr/lib/systemd/system/upower.service"
