@@ -1,0 +1,12 @@
+{
+  "id": "steam-keyboard",
+  "name": "Native Steam Keyboard Enhancement",
+  "version": "40.0.0",
+  "status": "Partially Verified",
+  "scope": "Desktop",
+  "requires_root": false,
+  "depends": [],
+  "tested_steamos": ["3.9.5"],
+  "summary": "Improves Valve's own on-screen keyboard in KDE Desktop Mode at runtime (no Steam files are patched): flush bottom/top placement with a move key, a real Hide key, transparency, Ctrl/Alt keys, long-press symbols, reliable English/Russian typing in Chrome, genuine Tab/Shift+Tab, Backspace word-delete, keyboard above Plasma popups, and Legion Go sticks/triggers/touchpad/D-pad while the keyboard is open.",
+  "restart": "Restart Steam once if the installer enabled Steam's local debugger; otherwise the keyboard is enhanced the next time it opens."
+}

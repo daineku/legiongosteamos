@@ -1,0 +1,18 @@
+[Unit]
+Description=Legion Go SteamOS: native Steam on-screen keyboard enhancements (Desktop Mode)
+Documentation=https://github.com/daineku/legiongosteamos/tree/main/tweaks/steam-keyboard
+# Desktop Mode only: started and stopped with the Plasma session, never part of Gaming Mode (gamescope-session).
+PartOf=plasma-workspace.target
+After=plasma-workspace.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -I %h/.local/lib/legiongo-steamos/steam-keyboard/lgk-helper.py
+# Crash-safe cleanup: unload its KWin script and restore the accessibility flag.
+ExecStopPost=/usr/bin/python3 -I %h/.local/lib/legiongo-steamos/steam-keyboard/lgk-helper.py --cleanup
+Restart=on-failure
+RestartSec=2
+Nice=5
+
+[Install]
+WantedBy=plasma-workspace.target
