@@ -5,17 +5,31 @@
 Open **Konsole** in Desktop Mode and paste (replace `steam-keyboard` with the tweak you want):
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.3
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+"$d/legiongo.sh" install steam-keyboard
 ```
 
 What happens:
-1. The project is cloned once, at the fixed release tag `v0.2.2-beta`, into `~/.local/share/legiongo-steamos/v0.2.2-beta`. Git verifies the content by its commit hashes, and you can read every script there. Nothing is piped from the internet into a shell.
+1. The project is cloned once, at the fixed release tag `v0.2.3`, into `~/.local/share/legiongo-steamos/v0.2.3`. Git verifies the content by its commit hashes, and you can read every script there. Nothing is piped from the internet into a shell.
 2. `legiongo.sh install <tweak>` checks the device, SteamOS version, InputPlumber, KDE, Steam and existing setups. It explains anything that needs `sudo` or another tweak, and asks first.
 3. The tweak is installed, verified, and its rollback state is saved in `~/.local/state/legiongo-steamos/<tweak>/`.
 
-To verify the checkout: `git -C ~/.local/share/legiongo-steamos/v0.2.2-beta log -1 --format=%H` must match the commit shown on the GitHub release page.
+To verify the checkout: `git -C ~/.local/share/legiongo-steamos/v0.2.3 log -1 --format=%H` must match the commit shown on the GitHub release page.
 
 **Administrator rights:** `precision-touchpad`, `desktop-power-policy`, `decky-loader` and `decky-power-plugins` write system files and use `sudo`. SteamOS's `deck` user has no password until you set one with `passwd`.
+
+## Results
+
+Every install ends with exactly one of these:
+
+| Result | Meaning |
+|---|---|
+| **INSTALLED & VERIFIED** | Installed, and the functional check passed (for example: the keyboard script is active in Steam, InputPlumber exposes the controller) |
+| **INSTALLED — VERIFICATION PENDING** | Installed, but it cannot be tested right now (outside Desktop Mode, Steam not running). `status <tweak>` re-checks it later; it is never reported as verified until a check passes. |
+| **FAILED** | An install step or the functional check failed. Everything this installation changed was rolled back, files you edited are kept, and the command exits with an error. |
+
+`status` shows the live state (`working: yes`, `verification pending` or `NO`). `doctor` marks each tweak as working, verification pending or BROKEN. `update` repairs a tweak whose files are intact but whose functional check fails.
 
 ## Uninstall
 

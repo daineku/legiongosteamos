@@ -19,17 +19,18 @@ Thanks for helping improve SteamOS on the Legion Go.
 tweaks/<id>/manifest.json  README.md  check.sh  install.sh  uninstall.sh  [adopt.sh] [status.sh]  files/
 ```
 
-- `README.md` must contain these sections (simple language; engineering details go to `docs/technical/<id>.md`):
-  - What It Does
-  - Why You Need It
-  - Before vs After
-  - How It Improves Legion Go
-  - Install — One Command
-  - Uninstall — One Command
-  - How to Check It Works
-  - Dependencies
+- `README.md` follows the shared guide layout. Keep the language simple; engineering details go to `docs/technical/<id>.md`. Sections:
+  - Overview
+  - Problem
+  - Enhancement
+  - User benefit
   - Compatibility
-  - Known Limitations
+  - Installation
+  - Verification
+  - Uninstallation
+  - Performance (measured, or "not measured")
+  - Limitations
+  - Technical details
 - `check.sh` must change nothing and end with `lg_check_result` (one `RESULT=` line).
 - Edit shared KDE files key by key (`kwriteconfig6`), never by replacing the file.
 - Do not reference other tweaks' files. Declare a dependency in `manifest.json` instead.

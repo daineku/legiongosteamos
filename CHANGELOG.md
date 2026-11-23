@@ -1,9 +1,26 @@
 # Changelog
 
-## Unreleased
+## 0.2.3 — 2026-11-24 (stable for the reference environment)
 
-- README and keyboard guide describe long-press special symbols, emoji on 🌐 hold, multi-touch Ctrl/Alt/Shift and Backspace word deletion.
-- Real screenshots of the Steam keyboard enhancement (bottom and top position) from the reference Legion Go, in the README and the keyboard guide.
+**Installer**
+- Three install outcomes: **INSTALLED & VERIFIED**, **INSTALLED — VERIFICATION PENDING** (it can't be tested now; never reported as verified), **FAILED** (rolled back, non-zero exit).
+- The verification result is recorded in the state.
+- `status` shows the live functional state.
+- `doctor` marks tweaks as working, verification pending or BROKEN.
+- `update` no longer calls a tweak "up to date" when its files are intact but its functional check fails; it repairs it.
+
+**Portable CPU boost**
+- `desktop-power-policy` also keeps the global cpufreq `boost` switch and Intel `intel_pstate/no_turbo` enabled in Desktop Mode. A device with only one of these interfaces is no longer rejected.
+- The previous values are restored on uninstall.
+- The policy logic is unit-tested on fake AMD and Intel sysfs trees. On the reference device, the modified policy applied identical values with no errors.
+
+**Presentation**
+- The README is the landing page: original Plasma/Breeze-inspired wordmark and architecture diagram (SVG, dark and light), status links, the real screenshots, "Two joysticks. One native Steam keyboard.", typing features, catalog, installation, compatibility and performance with trade-offs.
+- All tweak guides share one layout (Overview, Problem, Enhancement, User benefit, Compatibility, Installation, Verification, Uninstallation, Performance, Limitations, Technical details), each with a measured Performance section.
+- The README and keyboard guide describe long-press symbols, emoji on 🌐 hold, multi-touch modifiers and Backspace word deletion. Real screenshots of the keyboard (bottom and top placement) are included.
+- All one-command lines are pinned to `v0.2.3`.
+
+**Tests:** 142 sandbox tests (new: state model, update repair, doctor states, CPU boost capabilities and restore, power policy unit test).
 
 ## 0.2.2-beta — 2026-11-24
 

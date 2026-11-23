@@ -1,151 +1,170 @@
-# Legion Go SteamOS — Native Compatibility & Enhancements
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/brand/hero-dark.svg">
+    <img src="docs/images/brand/hero-light.svg" width="100%" alt="Legion Go SteamOS — Native Compatibility & Enhancements. Official SteamOS. Native Feel. Enhanced Experience.">
+  </picture>
+</p>
 
-**Official SteamOS. Native feel. Enhanced performance.**
+<p align="center">
+  <a href="https://github.com/daineku/legiongosteamos/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/daineku/legiongosteamos?label=release&color=3daee9"></a>
+  <a href="https://github.com/daineku/legiongosteamos/actions/workflows/ci.yml"><img alt="CI (static and sandboxed installer tests)" src="https://github.com/daineku/legiongosteamos/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-3daee9"></a>
+  <a href="docs/COMPATIBILITY.md"><img alt="Compatibility guide" src="https://img.shields.io/badge/compatibility-guide-3daee9"></a>
+</p>
 
-Legion Go SteamOS is a modular collection of compatibility fixes and native software enhancements for **Valve's official SteamOS**.
+**Legion Go SteamOS** improves Valve's official SteamOS instead of replacing it. It is a modular set of native enhancements and compatibility fixes, built and verified on the Lenovo Legion Go:
+- desktop typing with Valve's own keyboard;
+- controller input;
+- touchpad precision;
+- power behaviour.
 
-It is built and verified on the Lenovo Legion Go. It improves desktop interaction, controller input, keyboard usability, power efficiency and hardware integration, and it does so without replacing SteamOS or anything Valve ships. Portable enhancements are designed for other compatible SteamOS devices; hardware-specific tweaks stay isolated to the hardware they were built for.
+Portable enhancements are designed for other SteamOS devices; hardware-specific fixes stay isolated.
 
-The aim: keep the stability of official SteamOS, remove its handheld usability gaps, and make everyday use more polished, responsive and efficient.
+> **Preserve what Valve already does well. Improve what the hardware needs. Extend what the software can do.**
 
-> Community project. Not affiliated with or endorsed by Valve or Lenovo.
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│ Layer 3 — Legion Go hardware compatibility                    (Legion Go)│
-│   InputPlumber touchpad builds · touchpad hand-over · Lenovo WMI plugins │
-├──────────────────────────────────────────────────────────────────────────┤
-│ Layer 2 — Portable enhancements                (any compatible SteamOS)  │
-│   Steam keyboard · input profiles · power policy & CPU boost · mic · Decky│
-├──────────────────────────────────────────────────────────────────────────┤
-│ Layer 1 — Native SteamOS                                 (never replaced)│
-│   SteamOS · Steam client & keyboard · Steam Input · KDE Plasma · Gaming  │
-└──────────────────────────────────────────────────────────────────────────┘
-```
-
-- **Nothing in Layer 1 is replaced or patched on disk.** The keyboard is still Valve's keyboard, Steam Input is still in charge, and SteamOS updates keep working.
-- **Layer 2** checks for capabilities (drivers, interfaces, input devices), not device names.
-- **Layer 3** checks the Lenovo Legion Go hardware identity and refuses to run anywhere else. `--force` cannot override that.
-
-## Tweaks
-
-Every tweak installs with one command, can be checked and rolled back, and is **Reference Verified**: its behaviour was confirmed on our reference Legion Go (SteamOS 3.9.5), and its installer passes isolated install, reinstall, failure and rollback tests. Per-feature exceptions are listed in each guide.
-
-### Input & controller experience
-| Tweak | What you notice | Runs on |
-|---|---|---|
-| [**steam-keyboard**](tweaks/steam-keyboard/) | Valve's on-screen keyboard becomes a practical desktop typing tool:<br>• proper placement and a real Hide key<br>• Ctrl/Alt and Tab between fields<br>• typing in any configured language<br>• long-press special symbols and emoji (hold 🌐)<br>• multi-touch shortcuts like Alt+Tab<br>• **dual-joystick typing** on the Legion Go | any SteamOS device with KDE Desktop Mode (dual-joystick: InputPlumber handhelds) |
-
-### SteamOS software enhancements
-| Tweak | What you notice | Runs on |
-|---|---|---|
-| [**mic-enhance**](tweaks/mic-enhance/) | The internal microphone sounds fuller and does not clip | devices with one internal analog microphone |
-| [**decky-loader**](tweaks/decky-loader/) | Decky plugin menu, from a pinned and verified release | any SteamOS device |
-
-### Performance & power efficiency
-| Tweak | What you notice | Runs on |
-|---|---|---|
-| [**desktop-power-policy**](tweaks/desktop-power-policy/) | The desktop stays responsive (CPU boost kept on, balanced EPP) and draws less on battery; Gaming Mode is left alone | devices with EPP, CPU boost control or Lenovo firmware profiles |
-
-### Legion Go hardware compatibility
-| Tweak | What you notice | Runs on |
-|---|---|---|
-| [**precision-touchpad**](tweaks/precision-touchpad/) | Smoother touchpad (≈106 instead of ≈42 updates/s), optional precise tap-to-click | Lenovo Legion Go (1st gen) |
-| [**desktop-touchpad**](tweaks/desktop-touchpad/) | Touchpad keeps working when Steam is closed | Lenovo Legion Go (1st gen) |
-| [**decky-power-plugins**](tweaks/decky-power-plugins/) | Per-game TDP and Legion Go controls in Gaming Mode, with safe defaults and safety fixes | Lenovo Legion Go (1st gen) |
+Independent community project, not affiliated with Valve, Lenovo or KDE.
 
 ## Screenshots
 
-Real screenshots from the reference Legion Go (Desktop Mode, SteamOS 3.9.5). The keyboard is Valve's own Steam keyboard, with the `steam-keyboard` enhancement:
+Real screenshots from the reference Legion Go (SteamOS 3.9.5, KDE Plasma Desktop Mode). The keyboard is **Valve's original Steam keyboard**, enhanced by the `steam-keyboard` tweak.
 
-| Bottom position | Top position |
+| Bottom placement | Top placement |
+|:---:|:---:|
+| <img src="docs/images/steam-keyboard-bottom.png" alt="Valve's Steam keyboard docked flush at the bottom of the Legion Go screen, edge to edge and semi-transparent, with the move key, Ctrl, Alt and Hide" width="100%"> | <img src="docs/images/steam-keyboard-top.png" alt="Valve's Steam keyboard moved to the top, directly under the KDE panel, while Hello world is typed into a text editor below" width="100%"> |
+| **Flush, edge to edge, semi-transparent.** The editor and wallpaper stay visible through the keys. The move key replaces Emoji; Ctrl and Alt sit next to 🌐; Hide really closes it. | **One tap moves it under the KDE panel.** The panel stays usable, and the lower half of the screen stays free for the text you are typing. |
+
+## Two joysticks. One native Steam keyboard.
+
+Steam Deck types with Valve's dual-cursor keyboard by using its **two trackpads**. The Legion Go has only one trackpad, but **two analog sticks**, so we adapted Valve's native keyboard to use them instead. Touch input, the desktop pointer and the original Steam keyboard all stay as they are.
+
+| Control (while the keyboard is open) | Action |
 |---|---|
-| ![Steam keyboard at the bottom, edge to edge, semi-transparent](docs/images/steam-keyboard-bottom.png) | ![Steam keyboard at the top, directly under the KDE panel, with text typed into an editor](docs/images/steam-keyboard-top.png) |
-| Flush with the bottom edge and edge to edge; the editor and wallpaper show through the semi-transparent keys. The move key (bottom left) replaces Emoji; Ctrl and Alt sit next to 🌐; Hide closes it. | Moved to the top with one tap, directly under the KDE panel, so the text being typed at the bottom of the editor stays visible. |
-
-## Typing details that make the difference
-
-- **Long press for special symbols:**
-  - hold a key, release, get its second symbol (`9` → `(`, `2` → `@`, Russian `3` → `№`);
-  - slide to any entry in Steam's popup (e.g. `₽` on `8`);
-  - English and Russian symbols are sent as real Shift + key presses, so they arrive correctly everywhere.
-- **Emoji:** tap 🌐 to switch language, hold it to open Steam's emoji picker.
-- **Multi-touch modifiers:**
-  - hold Ctrl or Alt with one finger and tap with another (Alt+Tab, Ctrl+C);
-  - tap once for one key, twice to lock;
-  - Alt+Shift and similar combinations work as real key presses.
-- **Backspace hold:** whole words in text fields, characters in terminals.
-
-## Dual-joystick typing: Steam's dual-cursor keyboard, adapted to the Legion Go
-
-On a Steam Deck, Valve's keyboard is typed with the **two trackpads**: each thumb steers its own cursor over half of the keyboard.
-
-Unlike Steam Deck, the Lenovo Legion Go has only **one trackpad**. Our keyboard enhancement adapts Steam's native dual-cursor typing to the device's **two analog joysticks**, so you can type comfortably with the controller without replacing Valve's keyboard:
-
-| Control while the keyboard is open | Action |
-|---|---|
-| Left stick / right stick | Move the left / right key cursor (independently) |
-| Left trigger (LT) | Press the key under the left cursor (right click when no cursor is active) |
-| Right stick click (R3) | Press the key under the right cursor |
-| Right trigger (RT) | Desktop left click, so you can click into a text field without leaving the controller |
-| Touchscreen | Works as usual |
-| Touchpad | Stays the desktop mouse |
+| Left stick / right stick | Move the left / right key cursor, independently |
+| **LT** | Press the key under the left cursor |
+| **R3** (right stick click) | Press the key under the right cursor |
+| **RT** | Desktop left click (click into a field without leaving the controller) |
+| Touchpad | Desktop pointer |
+| Touchscreen | Direct typing |
 | D-pad | Arrow keys |
 
-Normal controller behaviour returns as soon as the keyboard closes. On a Steam Deck, the bridge stays off and Steam's own dual-trackpad typing is used; the installer detects which profile applies.
+When the keyboard closes, the controller behaves normally again. On a Steam Deck, Steam's own dual-trackpad typing stays untouched. On other handhelds, the bridge is enabled only when the controller is detected as a compatible virtual Steam Deck controller (InputPlumber).
 
-## Install — one command
+## Typing that works like a real keyboard
 
-Open **Konsole** in Desktop Mode and paste the line for the tweak you want, for example:
+| | |
+|---|---|
+| **Multilingual** | KDE's layout follows the Steam keyboard language, so English and Russian (and other XKB layouts) arrive as real key events, also in Chrome. Your own layout returns on Hide. |
+| **Desktop navigation** | Tab / Shift+Tab between fields; Ctrl and Alt for shortcuts on every layout |
+| **Long press** | Release on a key for its second symbol (`9` → `(`, `2` → `@`, Russian `3` → `№`), or slide to any entry in Steam's symbol popup |
+| **Emoji** | Tap 🌐 to switch language; hold it to open Steam's emoji picker |
+| **Multi-touch** | Hold Ctrl or Alt with one finger and tap another key (Alt+Tab, Ctrl+C); tap once for one key, twice to lock |
+| **Backspace hold** | Characters (accelerating) in terminals, whole words in text fields |
+| **Placement** | Bottom by default, top under the KDE panel with one tap; Hide closes it without unwanted reopening |
+| **Transparency** | Valve's own colours, slightly see-through, so the desktop stays readable |
+
+## Enhancements
+
+Each tweak installs separately, verifies that it works, and can be rolled back. All seven are **Reference Verified** on our Legion Go; the exceptions are noted in each guide.
+
+**Input & controller**
+- [**steam-keyboard**](tweaks/steam-keyboard/): everything above. *Portable: any SteamOS device with KDE Desktop Mode.*
+
+**SteamOS software**
+- [**mic-enhance**](tweaks/mic-enhance/): fuller internal microphone that does not clip. *Portable by capability.*
+- [**decky-loader**](tweaks/decky-loader/): Decky plugin loader from a pinned, checksum-verified release. *Portable.*
+
+**Performance & power**
+- [**desktop-power-policy**](tweaks/desktop-power-policy/): responsive desktop with CPU boost kept on and a balanced energy preference; lower idle draw on battery; Gaming Mode left to Steam. *Portable by capability (EPP, CPU boost or Lenovo firmware profiles).*
+
+**Legion Go hardware**
+- [**precision-touchpad**](tweaks/precision-touchpad/): smoother touchpad (≈ 106 instead of ≈ 42 updates/s), optional precise tap-to-click.
+- [**desktop-touchpad**](tweaks/desktop-touchpad/): the touchpad keeps working when Steam is closed.
+- [**decky-power-plugins**](tweaks/decky-power-plugins/): per-game TDP and Legion Go controls in Gaming Mode, with safe defaults. (Remapping, fans, RGB and charge limit: not yet verified.)
+
+## Architecture
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/brand/architecture-dark.svg">
+  <img src="docs/images/brand/architecture-light.svg" width="100%" alt="Three layers: Legion Go hardware compatibility on top of portable enhancements on top of official Valve SteamOS, which is never replaced">
+</picture>
+
+- **Official SteamOS** is never modified on disk.
+- **Portable enhancements** detect capabilities (drivers, interfaces, input devices), not device names.
+- **Legion Go hardware** tweaks check the device identity, and `--force` cannot override that.
+
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Install
+
+Open **Konsole** in Desktop Mode and paste. This installs the keyboard enhancement:
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.3
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+"$d/legiongo.sh" install steam-keyboard
 ```
 
-Replace `steam-keyboard` with any tweak id above. The command:
-1. Downloads this project at the fixed release `v0.2.2-beta` into `~/.local/share/legiongo-steamos/`, a folder you can inspect.
-2. Checks your device.
-3. Explains and asks before anything that needs your password or another tweak.
-4. Installs the tweak and **verifies that it works**. If verification fails, everything is rolled back.
+Precision touchpad (Legion Go):
 
-**Uninstall:** the same line with `uninstall`.
+```bash
+d=~/.local/share/legiongo-steamos/v0.2.3
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+"$d/legiongo.sh" install precision-touchpad
+```
 
-**Update one tweak:** the same line from a newer release with `update`.
+For any other tweak, replace the name at the end. What the command does:
+- Fetches the fixed release `v0.2.3` into a folder you can inspect.
+- Checks your device.
+- Asks before anything that needs your password or another tweak.
+- Installs and tests the tweak, then reports one of three results:
+  - **INSTALLED & VERIFIED**;
+  - **INSTALLED — VERIFICATION PENDING** (it cannot be tested right now, e.g. outside Desktop Mode);
+  - **FAILED**, in which case everything is rolled back.
 
-**Health check:** `doctor` prints a report with no personal data.
+| Task | Command (after the first install) |
+|---|---|
+| List tweaks and their state | `~/.local/share/legiongo-steamos/v0.2.3/legiongo.sh list` |
+| Health report (no personal data) | `… doctor` |
+| Is it working? | `… status <tweak>` |
+| Update one tweak | the install line with `update` |
+| Remove one tweak | the install line with `uninstall` |
 
-Tweaks that change system files ask for your `sudo` password. SteamOS has none by default: set one once with `passwd`.
+Tweaks that change system files ask for your `sudo` password; on SteamOS, set one once with `passwd`. More in [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
-## Lightweight by design
-
-Measured on the reference device, idle, keyboard closed (details: [docs/PERFORMANCE.md](docs/PERFORMANCE.md)):
-
-| Component | Runs | CPU (one core) | Memory |
-|---|---|---|---|
-| Keyboard helper | Desktop session only | 0.00 % (keyboard closed); about 3.5 % while the keyboard is open (reads controller reports) | 41 MB |
-| Touchpad hand-over | Desktop session only | 0.00 % | 15 MB |
-| Power policy | event-driven root service; writes nothing in Gaming Mode | 0.00 % | 39 MB |
-| Mic filter | inside PipeWire's existing filter-chain | 0.00 % (mic idle) | 11 MB |
-| InputPlumber 0.84 (precision-touchpad) | replaces the stock service | 6.3 % vs 3.1 % stock (cost of the native 106 Hz touchpad driver; our patch adds nothing measurable) | 24 MB vs 21 MB stock |
-
-There is no background updater, no polling helper, and no extra UI framework.
-
-## Compatibility at a glance
+## Compatibility
 
 | Device | Portable tweaks | Legion Go tweaks |
 |---|---|---|
 | Lenovo Legion Go (1st gen), SteamOS 3.9.5 | **Reference Verified** | **Reference Verified** |
-| Steam Deck LCD / OLED | compatible by capability, untested (the keyboard uses Steam's own dual-trackpad typing there) | not applicable |
+| Steam Deck LCD / OLED | compatible by capability, untested (keyboard: Steam's own trackpad typing stays) | not applicable |
 | Other handhelds on official SteamOS | compatible by capability, untested | not applicable |
 
-Full matrix: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md). `check <tweak>` explains exactly why a tweak is unavailable on a device.
+No feature has been tested on a second device yet; reports are welcome. `check <tweak>` explains why a tweak is unavailable. Full matrix: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
-## More
+## Performance
 
-[Installation](docs/INSTALLATION.md) · [Compatibility](docs/COMPATIBILITY.md) · [Performance](docs/PERFORMANCE.md) · [Third-party components](docs/THIRD_PARTY.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Maintaining](docs/MAINTAINING.md) · [Architecture](docs/ARCHITECTURE.md) · [Audit](docs/DEVELOPMENT_AUDIT.md) · [Test report](docs/TEST_REPORT.md) · [Wi-Fi research](experimental/wifi-reliability/) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+Measured on the reference device. Unfavourable numbers are included.
 
-## License
+| | Result |
+|---|---|
+| Touchpad updates (precision-touchpad) | ≈ 42 → ≈ 106 per second |
+| Tap moves the cursor ≥ 5 px (`tapfilter` variant) | 36 % → 7 % of taps |
+| Desktop idle on battery (power policy) | 7.86 W → 7.11 W |
+| CPU boost on vs off (sustained 16-process work) | 7 % faster, ≈ +3 °C; idle draw within noise |
+| Keyboard helper, touchpad hand-over, power policy, mic filter | 0.00 % CPU at idle (event-driven) |
+| **Trade-off:** InputPlumber 0.84 (needed for 106 Hz) | 6.3 % vs 3.1 % CPU of one core at idle; battery impact not isolated |
 
-GPL-3.0-or-later. The InputPlumber patches are derived from InputPlumber (GPL-3.0), and the LegionGoRemapper patch from LegionGoRemapper (BSD-3-Clause). No Valve or Lenovo files are distributed. Lenovo, Legion, Valve, Steam and SteamOS are trademarks of their owners. Provided as is, without warranty.
+Some tweaks trade a little processing for responsiveness, and not every tweak saves power. Details and conditions: [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+
+## Documentation
+
+[Installation](docs/INSTALLATION.md) · [Compatibility](docs/COMPATIBILITY.md) · [Performance](docs/PERFORMANCE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Architecture](docs/ARCHITECTURE.md) · [Third-party components](docs/THIRD_PARTY.md) · [Maintaining](docs/MAINTAINING.md) · [Audit](docs/DEVELOPMENT_AUDIT.md) · [Test report](docs/TEST_REPORT.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+
+## License and disclaimer
+
+GPL-3.0-or-later.
+- The InputPlumber patches derive from [InputPlumber](https://github.com/ShadowBlip/InputPlumber) (GPL-3.0).
+- The LegionGoRemapper patch derives from [LegionGoRemapper](https://github.com/aarron-lee/LegionGoRemapper) (BSD-3-Clause).
+- No Valve, Lenovo or KDE files or logos are distributed.
+
+Lenovo, Legion, Valve, Steam, SteamOS, KDE and Plasma are trademarks of their respective owners. This project is provided as is, without warranty.

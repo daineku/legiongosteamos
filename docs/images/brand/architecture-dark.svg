@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="430" viewBox="0 0 1280 430" role="img" aria-labelledby="t d">
+  <title id="t">Three-layer architecture</title>
+  <desc id="d">Layer 3, Legion Go hardware compatibility: InputPlumber touchpad builds, touchpad hand-over, Decky power and controller plugins. Layer 2, portable enhancements: Steam keyboard, input profiles, power policy and CPU boost, microphone, Decky Loader. Layer 1, official Valve SteamOS: SteamOS, Steam client and keyboard, Steam Input, KDE Plasma, Gaming Mode, never replaced.</desc>
+  <rect width="1280" height="430" rx="18" fill="#1b1e24"/>
+  <rect x="0.5" y="0.5" width="1279" height="429" rx="18" fill="none" stroke="#343a46"/>
+  <g font-family="Noto Sans, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <g transform="translate(40 36)">
+      <rect width="1200" height="104" rx="12" fill="#232731" stroke="#343a46"/>
+      <text x="28" y="40" font-size="13" font-weight="700" letter-spacing="2" fill="#3daee9">LAYER 3 · LEGION GO ONLY</text>
+      <text x="28" y="72" font-size="24" font-weight="600" fill="#eff0f1">Hardware compatibility</text>
+      <text x="420" y="72" font-size="18" fill="#eff0f1">InputPlumber touchpad builds · touchpad hand-over · Decky power &amp; controller plugins</text>
+    </g>
+    <g transform="translate(40 160)">
+      <rect width="1200" height="104" rx="12" fill="#232731" stroke="#343a46"/>
+      <text x="28" y="40" font-size="13" font-weight="700" letter-spacing="2" fill="#3daee9">LAYER 2 · ANY COMPATIBLE STEAMOS DEVICE</text>
+      <text x="28" y="72" font-size="24" font-weight="600" fill="#eff0f1">Portable enhancements</text>
+      <text x="420" y="72" font-size="18" fill="#eff0f1">Steam keyboard · input profiles · power policy &amp; CPU boost · microphone · Decky Loader</text>
+    </g>
+    <g transform="translate(40 284)">
+      <rect width="1200" height="104" rx="12" fill="#1d2a36" stroke="#3daee9"/>
+      <text x="28" y="40" font-size="13" font-weight="700" letter-spacing="2" fill="#3daee9">LAYER 1 · NEVER REPLACED</text>
+      <text x="28" y="72" font-size="24" font-weight="600" fill="#eff0f1">Official Valve SteamOS</text>
+      <text x="420" y="72" font-size="18" fill="#eff0f1">SteamOS · Steam client &amp; keyboard · Steam Input · KDE Plasma · Gaming Mode</text>
+    </g>
+  </g>
+</svg>

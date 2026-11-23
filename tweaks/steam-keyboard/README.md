@@ -1,10 +1,21 @@
 # Native Steam Keyboard Enhancement
 
+## Overview
+
 **Reference Verified** (Lenovo Legion Go, SteamOS 3.9.5) · portable: any SteamOS device with KDE Desktop Mode · Desktop Mode only · no sudo · id `steam-keyboard`
 
 > Turns Valve's original on-screen keyboard into a practical desktop typing tool, with multilingual input, reliable navigation and controller-friendly typing, without replacing it.
 
-## What It Does
+## Problem
+
+The stock keyboard was designed for Gaming Mode, and for a device with two trackpads:
+- In Desktop Mode it floats with a gap at the bottom, and its Close key moves it.
+- It hides behind menus and has no Ctrl or Alt keys.
+- Tab does nothing in Chrome.
+- Characters outside the active KDE layout are often lost in Chrome ([steam-for-linux#13644](https://github.com/ValveSoftware/steam-for-linux/issues/13644)).
+- **The Legion Go has one trackpad, not two.** Steam's dual-cursor typing has nothing to steer it with, and Steam takes over the sticks with its own keyboard controls.
+
+## Enhancement
 
 It keeps **Valve's own on-screen keyboard** (Steam button + X) and improves how it behaves in KDE Desktop Mode. The changes are applied at runtime each time the keyboard opens. No Steam file is patched, and Gaming Mode is not affected.
 
@@ -30,23 +41,18 @@ It keeps **Valve's own on-screen keyboard** (Steam button + X) and improves how 
   - **Touchscreen:** always available.
 - **Auto-open on text-field focus:** optional, off by default.
 
-## Screenshots
+### Screenshots
 
 | Bottom | Top |
 |---|---|
 | ![Steam keyboard at the bottom, edge to edge](../../docs/images/steam-keyboard-bottom.png) | ![Steam keyboard at the top under the KDE panel](../../docs/images/steam-keyboard-top.png) |
 | Flush bottom, semi-transparent, move key, Ctrl/Alt, Hide | Top position under the KDE panel; typing into Sublime Text |
 
-## Why You Need It
+## User benefit
 
-The stock keyboard was designed for Gaming Mode, and for a device with two trackpads:
-- In Desktop Mode it floats with a gap at the bottom, and its Close key moves it.
-- It hides behind menus and has no Ctrl or Alt keys.
-- Tab does nothing in Chrome.
-- Characters outside the active KDE layout are often lost in Chrome ([steam-for-linux#13644](https://github.com/ValveSoftware/steam-for-linux/issues/13644)).
-- **The Legion Go has one trackpad, not two.** Steam's dual-cursor typing has nothing to steer it with, and Steam takes over the sticks with its own keyboard controls.
+Forms, chat and terminal commands can be typed in Desktop Mode with the touchscreen or entirely with the controller, in your languages. The Legion Go's two sticks do the job the Steam Deck's two trackpads do.
 
-## Before vs After
+### Before vs After
 
 | | Before | After |
 |---|---|---|
@@ -56,45 +62,6 @@ The stock keyboard was designed for Gaming Mode, and for a device with two track
 | Russian (and other layouts) in Chrome | Characters can be dropped | Real key events once the KDE layout exists |
 | Controller typing on Legion Go | No dual-cursor typing | Two sticks = two key cursors |
 | Shortcuts | No Ctrl/Alt | Ctrl and Alt on every layout |
-
-## How It Improves Legion Go
-
-Forms, chat and terminal commands can be typed in Desktop Mode with the touchscreen or entirely with the controller, in your languages. The Legion Go's two sticks do the job the Steam Deck's two trackpads do.
-
-## Install — One Command
-
-```bash
-d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
-```
-
-If Steam's local debugger is not enabled yet, the installer asks before enabling it; then restart Steam once. Options (in front of `"$d/legiongo.sh"`):
-
-| Option | Effect |
-|---|---|
-| `LG_KEYBOARD_LAYOUTS="de fr"` | Add these KDE layouts (XKB codes; variants as `us(intl)`) so your Steam keyboard languages can sync. Removed again on uninstall. |
-| `LG_KEYBOARD_AUTOOPEN=1` | Open the keyboard automatically on text-field focus |
-
-## Uninstall — One Command
-
-```bash
-d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall steam-keyboard
-```
-
-Restart Steam afterwards for the completely stock keyboard. Only what the tweak added is removed.
-
-## How to Check It Works
-
-1. Open the keyboard (Steam button + X). It is flush at the bottom, with a keyboard icon instead of the Emoji key and Ctrl/Alt next to 🌐.
-2. In Chrome, type in a form field and press Tab. The next field gets focus.
-3. Tap 🌐 and type. Hide the keyboard: your KDE layout is back.
-4. On the Legion Go: move both sticks. Two cursors move; LT and R3 press keys.
-5. `~/.local/share/legiongo-steamos/v0.2.2-beta/legiongo.sh status steam-keyboard` shows "working: yes", and each enabled Steam language as *synced*, *needs a KDE layout*, or *handled by Steam* (input methods).
-
-## Dependencies
-
-- Steam's local debugger flag `~/.local/share/Steam/.cef-enable-remote-debugging`, shared with Decky Loader. While it exists, local programs can control the Steam client UI.
-- python3 with GObject introspection and KDE's tools. Both ship with SteamOS.
-- No other tweak.
 
 ## Compatibility
 
@@ -111,11 +78,61 @@ Restart Steam afterwards for the completely stock keyboard. Only what the tweak 
 
 The keyboard script depends on Steam client internals. Each hook is checked when the keyboard opens; a hook that a Steam update changed switches itself off, and the stock behaviour stays. `doctor` lists them. Because of this, SteamOS versions are not blocked (version policy: feature checks).
 
-## Known Limitations
+### Dependencies
+
+- Steam's local debugger flag `~/.local/share/Steam/.cef-enable-remote-debugging`, shared with Decky Loader. While it exists, local programs can control the Steam client UI.
+- python3 with GObject introspection and KDE's tools. Both ship with SteamOS.
+- No other tweak.
+
+## Installation
+
+```bash
+d=~/.local/share/legiongo-steamos/v0.2.3
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+"$d/legiongo.sh" install steam-keyboard
+```
+
+If Steam's local debugger is not enabled yet, the installer asks before enabling it; then restart Steam once. Options (in front of `"$d/legiongo.sh"`):
+
+| Option | Effect |
+|---|---|
+| `LG_KEYBOARD_LAYOUTS="de fr"` | Add these KDE layouts (XKB codes; variants as `us(intl)`) so your Steam keyboard languages can sync. Removed again on uninstall. |
+| `LG_KEYBOARD_AUTOOPEN=1` | Open the keyboard automatically on text-field focus |
+
+## Verification
+
+1. Open the keyboard (Steam button + X). It is flush at the bottom, with a keyboard icon instead of the Emoji key and Ctrl/Alt next to 🌐.
+2. In Chrome, type in a form field and press Tab. The next field gets focus.
+3. Tap 🌐 and type. Hide the keyboard: your KDE layout is back.
+4. On the Legion Go: move both sticks. Two cursors move; LT and R3 press keys.
+5. `~/.local/share/legiongo-steamos/v0.2.3/legiongo.sh status steam-keyboard` shows "working: yes", and each enabled Steam language as *synced*, *needs a KDE layout*, or *handled by Steam* (input methods).
+
+## Uninstallation
+
+```bash
+d=~/.local/share/legiongo-steamos/v0.2.3
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+"$d/legiongo.sh" uninstall steam-keyboard
+```
+
+Restart Steam afterwards for the completely stock keyboard. Only what the tweak added is removed.
+
+## Performance
+
+| | Measured (reference device) |
+|---|---|
+| Keyboard closed | 0.00 % CPU, ≈ 0.07 wake-ups/s, 41 MB RSS (event-driven helper, Desktop session only) |
+| Keyboard open | ≈ 3.5 % of one core while it reads controller reports for the joystick bridge |
+| Rendering | CSS transparency inside Steam's own window; no blur, no extra render loop |
+| Gaming Mode | not running |
+
+## Limitations
 
 - Layout sync needs the matching KDE layout. Nothing is added unless you ask (`LG_KEYBOARD_LAYOUTS`).
 - Physical long-press symbols are used on grid-verified layouts (English, Russian); other layouts keep Steam's long-press popup.
 - Right-to-left scripts are not offered by Steam's keyboard.
 - Resizing while open can leave a wrong size. Hide and reopen to fix it.
 
-Technical details: [docs/technical/steam-keyboard.md](../../docs/technical/steam-keyboard.md)
+## Technical details
+
+See [docs/technical/steam-keyboard.md](../../docs/technical/steam-keyboard.md).

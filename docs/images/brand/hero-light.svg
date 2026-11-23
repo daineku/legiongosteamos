@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="t d">
+  <title id="t">Legion Go SteamOS</title>
+  <desc id="d">Native Compatibility &amp; Enhancements. Official SteamOS. Native Feel. Enhanced Experience.</desc>
+  <rect x="0" y="0" width="1280" height="300" rx="18" fill="#f7f8fa"/>
+  <rect x="0.5" y="0.5" width="1279" height="299" rx="18" fill="none" stroke="#d1d6dd"/>
+  <rect x="56" y="78" width="6" height="144" rx="3" fill="#1d99f3"/>
+  <g font-family="Noto Sans, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="92" y="136" font-size="62" font-weight="700" letter-spacing="3" fill="#232629">LEGION GO <tspan fill="#1d99f3" font-weight="300">/</tspan> <tspan font-weight="300" letter-spacing="1">SteamOS</tspan></text>
+    <text x="94" y="182" font-size="27" fill="#4d5257">Native Compatibility &amp; Enhancements</text>
+    <text x="94" y="222" font-size="20" font-weight="600" letter-spacing="0.5" fill="#1574c0">Official SteamOS. Native Feel. Enhanced Experience.</text>
+  </g>
+  <g transform="translate(966 70)">
+    <rect x="0" y="0" width="252" height="44" rx="10" fill="#ffffff" stroke="#d1d6dd"/>
+    <rect x="0" y="58" width="252" height="44" rx="10" fill="#ffffff" stroke="#d1d6dd"/>
+    <rect x="0" y="116" width="252" height="44" rx="10" fill="#e3f1fb" stroke="#1d99f3"/>
+    <circle cx="22" cy="22" r="6" fill="#1d99f3" opacity="0.55"/>
+    <circle cx="22" cy="80" r="6" fill="#1d99f3" opacity="0.8"/>
+    <circle cx="22" cy="138" r="6" fill="#1d99f3"/>
+    <g font-family="Noto Sans, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" fill="#4d5257">
+      <text x="40" y="27">Hardware compatibility</text>
+      <text x="40" y="85">Portable enhancements</text>
+      <text x="40" y="143" fill="#232629" font-weight="600">Official SteamOS</text>
+    </g>
+  </g>
+</svg>

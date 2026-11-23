@@ -1,4 +1,4 @@
-# Test report — v0.2.2-beta
+# Test report — v0.2.3
 
 Generated 2026-11-24 on the reference Legion Go (SteamOS 3.9.5). The evidence categories are kept separate: passing installer tests or CI is **not** hardware verification.
 
@@ -13,7 +13,7 @@ Generated 2026-11-24 on the reference Legion Go (SteamOS 3.9.5). The evidence ca
 
 ## B. Simulated installation (sandboxed: mock root, stub system commands, real pinned upstream artifacts)
 
-Final run: **128 passed, 0 failed, 0 skipped** (locally, with all pinned upstream artifacts; GitHub Actions runs the same suite). Covered:
+Final run: **142 passed, 0 failed, 0 skipped** (locally, with all pinned upstream artifacts; GitHub Actions runs the same suite). Covered:
 
 - First install, verification, idempotent re-install, uninstall: all seven tweaks.
 - User-edited files kept on uninstall and reported as `partial`; replaced files restored with their original mode.
@@ -34,6 +34,12 @@ Final run: **128 passed, 0 failed, 0 skipped** (locally, with all pinned upstrea
 - Multilingual Input Support: KDE layout/variant matching and the language report (`tests/test_lgk_helper.py`); `LG_KEYBOARD_LAYOUTS` adds layouts with variants and restores them on uninstall.
 - Unsupported device / untested SteamOS / `--force`; external setup detection, adoption without changes, uninstall of adopted setups.
 
+- New in v0.2.3:
+  - **state model**: an untestable verification is reported as INSTALLED — VERIFICATION PENDING (exit 0, never "verified"); a healthy one as INSTALLED & VERIFIED; the result is recorded in the state;
+  - `status` and `doctor` show pending and BROKEN;
+  - `update` repairs intact-but-broken tweaks, and a failed repair rolls back with a non-zero exit;
+  - **CPU boost**: Intel `no_turbo` alone and global `boost` alone are supported capabilities; previous values are restored on uninstall;
+  - the power policy's real `apply()` logic runs against fake AMD and Intel sysfs: AC/battery transition, nothing written in Gaming Mode, governor and maximum frequency never touched.
 - New in v0.2.2-beta:
   - **verification is authoritative**: a failing functional check exits non-zero and rolls back files and KDE settings;
   - `status` reports working / not working;
@@ -162,6 +168,20 @@ Individual results:
 - status: reports the tweak as working
 - status: reports a stopped service as not working
 - verify: mic-enhance verified
+- state model: untestable verification -> exit 0
+- state model: reported as INSTALLED — VERIFICATION PENDING, never as verified
+- state model: pending recorded in state
+- state model: status shows pending outside Desktop Mode
+- state model: healthy result reported as INSTALLED & VERIFIED
+- state model: verified recorded in state
+- doctor: shows a broken tweak as BROKEN with a repair hint
+- update: intact files but failing function -> not 'up to date'
+- update: failed repair exits nonzero and rolls back
+- boost: Intel no_turbo alone is a supported capability
+- boost: global cpufreq boost alone is a supported capability
+- boost: previous global boost state recorded
+- boost: global boost restored to its previous value on uninstall
+- boost: policy logic on fake AMD/Intel sysfs (no max clocks, nothing in Gaming Mode)
 - launcher: runs the maintained build normally
 - launcher: stock newer than the build -> stock (no downgrade)
 - launcher: 4 starts within 180 s -> stock until reboot
@@ -193,6 +213,14 @@ Individual results:
 - **CPU boost on/off:** power and benchmark on battery. Boost was restored to on.
 - **Keyboard v41:** run from a scratch copy, then the installed v40 restored (service active, v40 re-injected, KDE layout `us`, test KWin script unloaded).
 - **Device configuration backup:** `~/.local/state/legiongo-steamos/device-backups/`.
+
+## v0.2.3 on the reference device
+
+- **Modified power policy:**
+  1. Ran on hardware in place of the installed service for 15 s: "applied desktop policy (start): battery, balanced, EPP balance_performance", no errors, values identical (balanced, balance_performance, boost on).
+  2. The installed service was restarted afterwards.
+  3. On this device, the new global-boost and Intel branches are no-ops (boost already on; no `intel_pstate`).
+- **Read-only checks:** `list` and `status` report all seven tweaks as working.
 
 ## Not verified (genuinely open)
 
