@@ -12,6 +12,23 @@
   <a href="docs/COMPATIBILITY.md"><img alt="Compatibility guide" src="https://img.shields.io/badge/compatibility-guide-3daee9"></a>
 </p>
 
+## Install — choose your device
+
+Open a device guide, choose a tweak, then press GitHub's **Copy** button on its ready-to-paste terminal command. **No placeholders, no editing, and no manual tweak-name replacement.** Commands install one module at a time, pinned to the reviewed **v0.2.3 stable release**.
+
+| Device | One-click installation guide | Support |
+|---|---|---|
+| **Lenovo Legion Go (1st gen)** | **[Browse all 7 ready-to-copy installers](docs/INSTALL_LEGION_GO.md)** | Reference Verified on SteamOS 3.9.5; some optional functions have limitations |
+| **Steam Deck LCD / OLED** | **[Browse 4 portable software installers](docs/INSTALL_STEAM_DECK.md)** | Capability-based only; **not yet physically verified on Steam Deck**. Legion Go hardware tweaks are excluded |
+
+**Quick install: native Steam keyboard** (for compatible SteamOS Desktop Mode devices):
+
+```bash
+d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
+```
+
+For touchpad, power, microphone, Decky and other improvements, use your device guide above — every tweak has its **own complete command**. The installer checks compatibility and asks before changing anything requiring additional permissions. [Installation, updates and rollback](docs/INSTALLATION.md).
+
 **Legion Go SteamOS** improves Valve's official SteamOS instead of replacing it. It is a modular set of native enhancements and compatibility fixes, built and verified on the Lenovo Legion Go:
 - desktop typing with Valve's own keyboard;
 - controller input;
@@ -97,43 +114,6 @@ Each tweak installs separately, verifies that it works, and can be rolled back. 
 
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Install
-
-Open **Konsole** in Desktop Mode and paste. This installs the keyboard enhancement:
-
-```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
-"$d/legiongo.sh" install steam-keyboard
-```
-
-Precision touchpad (Legion Go):
-
-```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
-"$d/legiongo.sh" install precision-touchpad
-```
-
-For any other tweak, replace the name at the end. What the command does:
-- Fetches the fixed release `v0.2.3` into a folder you can inspect.
-- Checks your device.
-- Asks before anything that needs your password or another tweak.
-- Installs and tests the tweak, then reports one of three results:
-  - **INSTALLED & VERIFIED**;
-  - **INSTALLED — VERIFICATION PENDING** (it cannot be tested right now, e.g. outside Desktop Mode);
-  - **FAILED**, in which case everything is rolled back.
-
-| Task | Command (after the first install) |
-|---|---|
-| List tweaks and their state | `~/.local/share/legiongo-steamos/v0.2.3/legiongo.sh list` |
-| Health report (no personal data) | `… doctor` |
-| Is it working? | `… status <tweak>` |
-| Update one tweak | the install line with `update` |
-| Remove one tweak | the install line with `uninstall` |
-
-Tweaks that change system files ask for your `sudo` password; on SteamOS, set one once with `passwd`. More in [docs/INSTALLATION.md](docs/INSTALLATION.md).
-
 ## Compatibility
 
 | Device | Portable tweaks | Legion Go tweaks |
@@ -161,7 +141,7 @@ Some tweaks trade a little processing for responsiveness, and not every tweak sa
 
 ## Documentation
 
-[Installation](docs/INSTALLATION.md) · [Compatibility](docs/COMPATIBILITY.md) · [Performance](docs/PERFORMANCE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Architecture](docs/ARCHITECTURE.md) · [Third-party components](docs/THIRD_PARTY.md) · [Maintaining](docs/MAINTAINING.md) · [Audit](docs/DEVELOPMENT_AUDIT.md) · [Test report](docs/TEST_REPORT.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+[Legion Go installers](docs/INSTALL_LEGION_GO.md) · [Steam Deck installers](docs/INSTALL_STEAM_DECK.md) · [Installation & management](docs/INSTALLATION.md) · [Compatibility](docs/COMPATIBILITY.md) · [Performance](docs/PERFORMANCE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Architecture](docs/ARCHITECTURE.md) · [Third-party components](docs/THIRD_PARTY.md) · [Maintaining](docs/MAINTAINING.md) · [Audit](docs/DEVELOPMENT_AUDIT.md) · [Test report](docs/TEST_REPORT.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 
 ## License and disclaimer
 

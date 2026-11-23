@@ -1,23 +1,17 @@
-# Installation
+# Installation & management
 
-## One command per tweak
+## Select your device — copy-ready commands
 
-Open **Konsole** in Desktop Mode and paste (replace `steam-keyboard` with the tweak you want):
+- **[Lenovo Legion Go (1st gen): all 7 tweak installers](INSTALL_LEGION_GO.md)**
+- **[Steam Deck LCD / OLED: 4 portable software installers](INSTALL_STEAM_DECK.md)** — compatible by capability but not physically verified on Steam Deck.
 
-```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
-"$d/legiongo.sh" install steam-keyboard
-```
+Each device guide has **one complete, release-pinned command per tweak** plus copy-ready uninstall commands. There is no need to replace a tweak name or edit the command. Click a tweak in the guide's table, then use GitHub's built-in **Copy** control on the Bash code block. Open **Konsole** in SteamOS Desktop Mode and paste.
 
-What happens:
-1. The project is cloned once, at the fixed release tag `v0.2.3`, into `~/.local/share/legiongo-steamos/v0.2.3`. Git verifies the content by its commit hashes, and you can read every script there. Nothing is piped from the internet into a shell.
-2. `legiongo.sh install <tweak>` checks the device, SteamOS version, InputPlumber, KDE, Steam and existing setups. It explains anything that needs `sudo` or another tweak, and asks first.
-3. The tweak is installed, verified, and its rollback state is saved in `~/.local/state/legiongo-steamos/<tweak>/`.
+The commands clone the exact reviewed `v0.2.3` release into `~/.local/share/legiongo-steamos/v0.2.3`, only when needed, and run the selected tweak's local installer. No remote shell code is piped directly into Bash. Users can inspect the checkout first.
 
-To verify the checkout: `git -C ~/.local/share/legiongo-steamos/v0.2.3 log -1 --format=%H` must match the commit shown on the GitHub release page.
+Installations are independent; no global 'install everything' action is run. Each tweak checks compatibility, requests permission before installing a dependency, records its rollback state in `~/.local/state/legiongo-steamos/<tweak>/`, and asks for `sudo` only when required. The `deck` user may need to set an administrator password first via `passwd`.
 
-**Administrator rights:** `precision-touchpad`, `desktop-power-policy`, `decky-loader` and `decky-power-plugins` write system files and use `sudo`. SteamOS's `deck` user has no password until you set one with `passwd`.
+Verify the checkout with `git -C ~/.local/share/legiongo-steamos/v0.2.3 log -1 --format=%H`, which should match the published release's commit. The device-specific pages also provide one-click `list` and `doctor` commands.
 
 ## Results
 
@@ -33,11 +27,11 @@ Every install ends with exactly one of these:
 
 ## Uninstall
 
-The same line with `uninstall`. It restores what the tweak changed and keeps files you edited afterwards. Backups and logs remain in `~/.local/state/legiongo-steamos/.uninstalled/`.
+Both device guides provide a **separate, ready-to-copy `uninstall` command for each tweak**, tucked under its installation section. No command editing is needed. Uninstall restores what the tweak changed and keeps files you edited afterwards. Backups and logs remain in `~/.local/state/legiongo-steamos/.uninstalled/`.
 
 ## Update one tweak
 
-Use the one-command line from the **new** release's README with `update <tweak>`:
+For a new release, use its versioned guide; for advanced use, run `legiongo.sh update` with the installed tweak id. This is intentionally a separate maintenance operation, not part of the one-click install flow:
 - Only that tweak is updated.
 - A tweak that is already current reports "up to date".
 - A damaged one (`partial`) is repaired.
