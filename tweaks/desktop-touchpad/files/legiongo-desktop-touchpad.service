@@ -1,0 +1,17 @@
+[Unit]
+Description=Legion Go SteamOS: touchpad handover (native KDE touchpad while Steam is not running)
+Documentation=https://github.com/daineku/legiongosteamos/tree/main/tweaks/desktop-touchpad
+# Desktop Mode only: started and stopped with the Plasma session, never part of Gaming Mode (gamescope-session).
+PartOf=plasma-workspace.target
+After=plasma-workspace.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -I %h/.local/lib/legiongo-steamos/desktop-touchpad/legion-tp-handover.py
+# Crash-safe cleanup: always leave SteamOS's stock target list behind.
+ExecStopPost=/usr/bin/python3 -I %h/.local/lib/legiongo-steamos/desktop-touchpad/legion-tp-handover.py --restore
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=plasma-workspace.target
