@@ -43,10 +43,12 @@ It keeps **Valve's own on-screen keyboard** (Steam button + X) and improves how 
 
 ### Screenshots
 
-| Bottom | Top |
-|---|---|
-| ![Steam keyboard at the bottom, edge to edge](../../docs/images/steam-keyboard-bottom.png) | ![Steam keyboard at the top under the KDE panel](../../docs/images/steam-keyboard-top.png) |
-| Flush bottom, semi-transparent, move key, Ctrl/Alt, Hide | Top position under the KDE panel; typing into Sublime Text |
+<p align="center">
+  <img src="../../docs/images/steam-keyboard-bottom.png" width="410" alt="Steam keyboard docked flush at the bottom, edge to edge, semi-transparent">
+  <img src="../../docs/images/steam-keyboard-top.png" width="410" alt="Steam keyboard at the top, directly under the KDE panel, while text is typed into an editor">
+</p>
+
+Left: bottom placement (flush, semi-transparent, move key, Ctrl/Alt, Hide). Right: top placement under the KDE panel while typing in Sublime Text.
 
 ## User benefit
 

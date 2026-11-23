@@ -28,10 +28,13 @@ Independent community project, not affiliated with Valve, Lenovo or KDE.
 
 Real screenshots from the reference Legion Go (SteamOS 3.9.5, KDE Plasma Desktop Mode). The keyboard is **Valve's original Steam keyboard**, enhanced by the `steam-keyboard` tweak.
 
-| Bottom placement | Top placement |
-|:---:|:---:|
-| <img src="docs/images/steam-keyboard-bottom.png" alt="Valve's Steam keyboard docked flush at the bottom of the Legion Go screen, edge to edge and semi-transparent, with the move key, Ctrl, Alt and Hide" width="100%"> | <img src="docs/images/steam-keyboard-top.png" alt="Valve's Steam keyboard moved to the top, directly under the KDE panel, while Hello world is typed into a text editor below" width="100%"> |
-| **Flush, edge to edge, semi-transparent.** The editor and wallpaper stay visible through the keys. The move key replaces Emoji; Ctrl and Alt sit next to 🌐; Hide really closes it. | **One tap moves it under the KDE panel.** The panel stays usable, and the lower half of the screen stays free for the text you are typing. |
+<p align="center">
+  <img src="docs/images/steam-keyboard-bottom.png" width="410" alt="Valve's Steam keyboard docked flush at the bottom of the Legion Go screen, edge to edge and semi-transparent, with the move key, Ctrl, Alt and Hide">
+  <img src="docs/images/steam-keyboard-top.png" width="410" alt="Valve's Steam keyboard moved to the top, directly under the KDE panel, while Hello world is typed into a text editor below">
+</p>
+
+- **Bottom placement (left):** flush with the bottom edge, edge to edge, semi-transparent; the editor and wallpaper stay visible through the keys. The move key replaces Emoji, Ctrl and Alt sit next to 🌐, and Hide really closes it.
+- **Top placement (right):** one tap moves it directly under the KDE panel. The panel stays usable, and the lower half of the screen stays free for the text you are typing.
 
 ## Two joysticks. One native Steam keyboard.
 
@@ -51,7 +54,7 @@ When the keyboard closes, the controller behaves normally again. On a Steam Deck
 
 ## Typing that works like a real keyboard
 
-| | |
+| Feature | What you get |
 |---|---|
 | **Multilingual** | KDE's layout follows the Steam keyboard language, so English and Russian (and other XKB layouts) arrive as real key events, also in Chrome. Your own layout returns on Hide. |
 | **Desktop navigation** | Tab / Shift+Tab between fields; Ctrl and Alt for shortcuts on every layout |
