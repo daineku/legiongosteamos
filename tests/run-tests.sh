@@ -25,10 +25,11 @@ static_tests() {
     [ "$bad" = 0 ] && pass "python syntax" || fail "python syntax"
     bad=0
     for f in "$REPO"/tweaks/*/manifest.json; do
-        jq -e '.id and .name and .version and .status and .scope and (.requires_root|type=="boolean") and (.depends|type=="array") and (.tested_steamos|type=="array") and .summary and .restart' "$f" >/dev/null \
+        jq -e '.id and .name and .version and .status and .scope and (.requires_root|type=="boolean") and (.depends|type=="array") and (.tested_steamos|type=="array") and .summary and .restart and (.layer|IN("portable","hardware")) and (.hardware|IN("portable","capability","legion-go")) and (.version_policy|IN("tested","feature")) and (.category|IN("software","input","power","legion-go"))' "$f" >/dev/null \
             || { bad=1; echo "    manifest: $f"; }
         [ "$(jq -r .id "$f")" = "$(basename "$(dirname "$f")")" ] || { bad=1; echo "    id mismatch: $f"; }
-        case "$(jq -r .status "$f")" in "Reference Verified"|Experimental) ;; *) bad=1; echo "    status: $f" ;; esac
+        case "$(jq -r .status "$f")" in "Reference Verified"|"Cross-device Verified"|Experimental|Unsupported) ;; *) bad=1; echo "    status: $f" ;; esac
+        [ "$(jq -r .hardware "$f")" = legion-go ] && [ "$(jq -r .layer "$f")" != hardware ] && { bad=1; echo "    legion-go tweak not in the hardware layer: $f"; }
         for d in $(jq -r '.depends[]' "$f"); do [ -f "$REPO/tweaks/$d/manifest.json" ] || { bad=1; echo "    unknown dependency $d in $f"; }; done
     done
     [ "$bad" = 0 ] && pass "manifest.json schema, ids, statuses, dependencies" || fail "manifests"
@@ -82,7 +83,7 @@ SANDBOX=""
 new_sandbox() {   # new_sandbox [steamos-version] [product]
     SANDBOX=$(mktemp -d "$REPO/tests/.sandbox.XXXXXX")
     export SANDBOX HOME="$SANDBOX/home" LG_ROOT="$SANDBOX/root" LG_TEST=1 LG_STATE="$SANDBOX/home/.local/state/legiongo-steamos"
-    export XDG_STATE_HOME="$SANDBOX/home/.local/state" XDG_CURRENT_DESKTOP=KDE NO_COLOR=1
+    export XDG_STATE_HOME="$SANDBOX/home/.local/state" XDG_CURRENT_DESKTOP=KDE NO_COLOR=1 LG_VERIFY_SETTLE=0
     mkdir -p "$HOME/.local/share/Steam" "$HOME/.config"
     make_root "$LG_ROOT" "${1:-3.9.5}" "${2:-83E1}"
     make_stubs "$SANDBOX/bin"
@@ -160,10 +161,31 @@ sim_tests() {
     new_sandbox 3.9.5 21XX
     t "unsupported device -> precision-touchpad incompatible" test "$(state_of precision-touchpad)" = incompatible
     t "unsupported device -> install refused" bash -c "! $REPO/legiongo.sh install desktop-touchpad --yes"
+    touch "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/boost"
+    # --- cross-device: portable/capability tweaks are not locked to the Legion Go DMI
+    t "other device -> steam-keyboard (portable) installable" test "$(state_of steam-keyboard)" = not-installed
+    t "other device -> mic-enhance (capability) installable" test "$(state_of mic-enhance)" = not-installed
+    t "other device -> desktop-power-policy installable when EPP/boost exist" test "$(state_of desktop-power-policy)" = not-installed
+    t "other device -> legion-go tweaks incompatible" bash -c "for x in precision-touchpad desktop-touchpad decky-power-plugins; do $REPO/legiongo.sh check \$x | grep -q '^RESULT=incompatible' || exit 1; done"
+    t "other device -> check explains why" bash -c "$REPO/legiongo.sh check precision-touchpad 2>&1 | grep -q 'drives Lenovo Legion Go hardware'"
+    rm -f "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference" "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/boost"; rm -rf "$LG_ROOT/sys/class/platform-profile"
+    t "other device without any power interface -> desktop-power-policy incompatible" test "$(state_of desktop-power-policy)" = incompatible
+    t "--force does not bypass missing hardware" bash -c "! $REPO/legiongo.sh install precision-touchpad --force --yes"
+
+    # --- input profiles (capability detection)
+    new_sandbox
+    mkdir -p "$LG_ROOT/sys/class/hidraw/hidraw7/device" "$LG_ROOT/run/udev/data"
+    echo "HID_ID=0003:000028DE:000012FE" > "$LG_ROOT/sys/class/hidraw/hidraw7/device/uevent"
+    echo "E:ID_INPUT_TOUCHSCREEN=1" > "$LG_ROOT/run/udev/data/c13:70"
+    t "input profiles: InputPlumber virtual Deck controller + touchscreen" bash -c ". $REPO/lib/common.sh; [ \"\$(lg_input_profiles)\" = 'dual-joystick touchscreen' ]"
+    echo "HID_ID=0003:000028DE:00001205" > "$LG_ROOT/sys/class/hidraw/hidraw7/device/uevent"
+    t "input profiles: Steam Deck controller -> dual-trackpad (bridge stays off)" bash -c ". $REPO/lib/common.sh; [ \"\$(lg_input_profiles)\" = 'dual-trackpad touchscreen' ]"
+
     new_sandbox 3.10.0
-    t "untested SteamOS -> state untested" test "$(state_of desktop-touchpad)" = untested
-    t "untested SteamOS -> install needs --force" bash -c "! $REPO/legiongo.sh install mic-enhance"
-    t "untested SteamOS -> --force installs" lg install mic-enhance --force
+    t "untested SteamOS -> 'tested'-policy tweak reports untested" test "$(state_of desktop-touchpad)" = untested
+    t "untested SteamOS -> 'tested'-policy install needs --force" bash -c "! $REPO/legiongo.sh install desktop-touchpad"
+    t "untested SteamOS -> 'feature'-policy tweak decided by feature checks" test "$(state_of mic-enhance)" = not-installed
+    t "untested SteamOS -> feature-policy install works" lg install mic-enhance
     # --- precision-touchpad: feature-level detection, not version numbers
     new_sandbox
     t "precision-touchpad: stock 0.78 path -> installable" test "$(state_of precision-touchpad)" = not-installed
@@ -273,6 +295,44 @@ sim_tests() {
         unset LG_DECKY_BINARY LG_SDTDP_ZIP LG_LGR_TARBALL
     else
         skip "decky modules (set LG_TEST_DECKY_BINARY, LG_TEST_SDTDP_ZIP, LG_TEST_LGR_TARBALL)"
+    fi
+
+    # --- authoritative post-install verification
+    new_sandbox
+    sed -i 's/interface_num: 2/interface_num: 1/' "$LG_ROOT/usr/share/inputplumber/devices/50-legion_go.yaml"
+    touch "$SANDBOX/journal-fail"
+    t "verify: failing functional check -> install exits nonzero" bash -c "! $REPO/legiongo.sh install desktop-touchpad < /dev/null"
+    t "verify: failed install is rolled back (no files, no state)" bash -c "[ ! -e '$HOME/.local/lib/legiongo-steamos/desktop-touchpad/legion-tp-handover.py' ] && [ ! -e '$LG_STATE/desktop-touchpad/state' ]"
+    t "verify: KDE setting restored after the failed install" bash -c "! grep -q TapToClick '$SANDBOX/kconfig.db'"
+    rm -f "$SANDBOX/journal-fail"
+    t "verify: healthy install passes verification" lg install desktop-touchpad
+    t "status: reports the tweak as working" bash -c "$REPO/legiongo.sh status desktop-touchpad | grep -q 'working:      yes'"
+    touch "$SANDBOX/fail-active"
+    t "status: reports a stopped service as not working" bash -c "$REPO/legiongo.sh status desktop-touchpad | grep -q 'working:      NO'"
+    rm -f "$SANDBOX/fail-active"
+    new_sandbox
+    t "verify: mic-enhance verified" lg install mic-enhance
+
+    # --- InputPlumber launcher: fallback, crash-loop protection, no downgrade
+    new_sandbox
+    L="$SANDBOX/launch"; U="$SANDBOX/up"; mkdir -p "$U/bin" "$U/share/inputplumber/devices" "$LG_ROOT/usr/bin"
+    printf '#!/bin/sh\n[ "$1" = --version ] && { echo "inputplumber 0.84.0"; exit 0; }\necho OURS\n' > "$U/bin/inputplumber"
+    printf '#!/bin/sh\n[ "$1" = --version ] && { echo "inputplumber ${STUB_STOCK:-0.78.0}"; exit 0; }\necho STOCK\n' > "$LG_ROOT/usr/bin/inputplumber"
+    chmod +x "$U/bin/inputplumber" "$LG_ROOT/usr/bin/inputplumber"
+    sed "s|@DEST@|$U|; s|@VERSION@|0.84.0|; s|@STOCK@|$LG_ROOT/usr/bin/inputplumber|; s|@RUN@|$SANDBOX/run|" "$REPO/tweaks/precision-touchpad/files/inputplumber-launch.in" > "$L"
+    t "launcher: runs the maintained build normally" test "$(sh "$L" 2>/dev/null)" = OURS
+    t "launcher: stock newer than the build -> stock (no downgrade)" test "$(STUB_STOCK=0.90.1 sh "$L" 2>/dev/null)" = STOCK
+    sh "$L" >/dev/null 2>&1; sh "$L" >/dev/null 2>&1; sh "$L" >/dev/null 2>&1
+    t "launcher: 4 starts within 180 s -> stock until reboot" test "$(sh "$L" 2>/dev/null)" = STOCK
+    t "launcher: crash-loop fallback is logged" bash -c "sh '$L' 2>&1 >/dev/null | grep -q 'restarted .* times'"
+    rm -rf "$SANDBOX/run"; chmod -x "$U/bin/inputplumber"
+    t "launcher: broken build -> stock" test "$(sh "$L" 2>/dev/null)" = STOCK
+    if [ -n "${LG_TEST_IP_TARBALL:-}" ]; then
+        new_sandbox; touch "$SANDBOX/busctl-fail"
+        t "precision-touchpad: no controller exposed -> verification fails, rolled back" bash -c "! LG_IP_VARIANT=release LG_IP_TARBALL='$LG_TEST_IP_TARBALL' $REPO/legiongo.sh install precision-touchpad"
+        t "precision-touchpad: nothing left after failed verification" bash -c "[ ! -e '$LG_ROOT/etc/systemd/system/inputplumber.service.d/50-legiongo-steamos-inputplumber.conf' ] && [ ! -e '$LG_ROOT/home/legiongo-steamos' ]"
+        rm -f "$SANDBOX/busctl-fail"
+        t "precision-touchpad: emergency restore script installed" bash -c "LG_IP_VARIANT=release LG_IP_TARBALL='$LG_TEST_IP_TARBALL' $REPO/legiongo.sh install precision-touchpad >/dev/null 2>&1 && grep -q 'rm -f /etc/systemd/system/inputplumber.service.d/50-legiongo-steamos-inputplumber.conf' '$LG_ROOT/home/legiongo-steamos/inputplumber/bin/legiongo-ip-restore-stock'"
     fi
 
     # --- Multilingual Input Support: helper logic (pure functions, no D-Bus)

@@ -9,9 +9,16 @@ echo "systemctl $*" >> "$SANDBOX/calls.log"
 case " $* " in *" is-active "*) [ -e "$SANDBOX/fail-active" ] && exit 3; echo active ;; esac
 exit 0
 EOF
+    # journalctl: canned "healthy" log lines for verify.sh; $SANDBOX/journal-fail makes them report failures
     cat > "$d/journalctl" <<'EOF'
 #!/bin/bash
-exit 0
+[ -e "$SANDBOX/journal-fail" ] && { echo "legion-tp-handover: ENABLE native touchpad: [] -> [] FAILED: denied"; exit 0; }
+printf '%s\n' "lgk: lgk: installed v41" "legion-tp-handover: watching Steam controller node /dev/hidraw7" \
+    "legion-power: applied desktop policy (start): battery, balanced, EPP balance_performance"
+EOF
+    cat > "$d/ss" <<'EOF'
+#!/bin/bash
+[ -e "$SANDBOX/ss-fail" ] || echo "LISTEN 0 128 127.0.0.1:1337 0.0.0.0:*"
 EOF
     # kwriteconfig6/kreadconfig6: flat key store "file|group|group|key=value"
     cat > "$d/kwriteconfig6" <<'EOF'
@@ -35,7 +42,12 @@ done
 k="$file$groups|$key"; db="$SANDBOX/kconfig.db"; touch "$db"
 grep -F "$k=" "$db" | tail -1 | cut -d= -f2-
 EOF
-    for c in qdbus6 busctl; do printf '#!/bin/bash\necho "%s $*" >> "$SANDBOX/calls.log"\n' "$c" > "$d/$c"; done
+    printf '#!/bin/bash\necho "qdbus6 $*" >> "$SANDBOX/calls.log"\n' > "$d/qdbus6"
+    cat > "$d/busctl" <<'EOF'
+#!/bin/bash
+echo "busctl $*" >> "$SANDBOX/calls.log"
+case " $* " in *" tree "*) [ -e "$SANDBOX/busctl-fail" ] || echo "/org/shadowblip/InputPlumber/CompositeDevice0" ;; esac
+EOF
     cat > "$d/pacman" <<'EOF'
 #!/bin/bash
 [ "$1" = -Q ] && [ "$2" = inputplumber ] && echo "inputplumber ${STUB_IP_VERSION:-0.78.0}-1"
