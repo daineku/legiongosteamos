@@ -56,6 +56,15 @@ Every tweak installs with one command, can be checked and rolled back, and is **
 | [**desktop-touchpad**](tweaks/desktop-touchpad/) | Touchpad keeps working when Steam is closed | Lenovo Legion Go (1st gen) |
 | [**decky-power-plugins**](tweaks/decky-power-plugins/) | Per-game TDP and Legion Go controls in Gaming Mode, with safe defaults and safety fixes | Lenovo Legion Go (1st gen) |
 
+## Screenshots
+
+Real screenshots from the reference Legion Go (Desktop Mode, SteamOS 3.9.5). The keyboard is Valve's own Steam keyboard, with the `steam-keyboard` enhancement:
+
+| Bottom position | Top position |
+|---|---|
+| ![Steam keyboard at the bottom, edge to edge, semi-transparent](docs/images/steam-keyboard-bottom.png) | ![Steam keyboard at the top, directly under the KDE panel, with text typed into an editor](docs/images/steam-keyboard-top.png) |
+| Flush with the bottom edge and edge to edge; the editor and wallpaper show through the semi-transparent keys. The move key (bottom left) replaces Emoji; Ctrl and Alt sit next to 🌐; Hide closes it. | Moved to the top with one tap, directly under the KDE panel, so the text being typed at the bottom of the editor stays visible. |
+
 ## Dual-joystick typing: Steam's dual-cursor keyboard, adapted to the Legion Go
 
 On a Steam Deck, Valve's keyboard is typed with the **two trackpads**: each thumb steers its own cursor over half of the keyboard.

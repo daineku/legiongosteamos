@@ -22,6 +22,13 @@ It keeps **Valve's own on-screen keyboard** (Steam button + X) and improves how 
   - **Touchscreen:** always available.
 - **Auto-open on text-field focus:** optional, off by default.
 
+## Screenshots
+
+| Bottom | Top |
+|---|---|
+| ![Steam keyboard at the bottom, edge to edge](../../docs/images/steam-keyboard-bottom.png) | ![Steam keyboard at the top under the KDE panel](../../docs/images/steam-keyboard-top.png) |
+| Flush bottom, semi-transparent, move key, Ctrl/Alt, Hide | Top position under the KDE panel; typing into Sublime Text |
+
 ## Why You Need It
 
 The stock keyboard was designed for Gaming Mode, and for a device with two trackpads:
