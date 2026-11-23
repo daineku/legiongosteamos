@@ -13,7 +13,15 @@ It keeps **Valve's own on-screen keyboard** (Steam button + X) and improves how 
 - **Slight transparency.**
 - **Ctrl and Alt keys** on every layout (Ctrl+C/V/Z, Alt+Tab).
 - **Tab / Shift+Tab** move between form fields.
-- **Long press** types a key's second symbol.
+- **Long press for special symbols.** Hold a key and release it to type its second symbol: `0` → `)`, `9` → `(`, `2` → `@` in English; `3` → `№`, `7` → `?`, `.` → `,` in Russian. Sliding onto another entry of Steam's popup (for example `₽` on `8`) types that entry instead. On English and Russian the symbol is sent as a real Shift + key, so it arrives correctly in every app, including Chrome and remote-desktop clients.
+- **Emoji on the language key.** A short tap on 🌐 switches language; holding it for half a second opens Steam's own emoji picker.
+- **Multi-touch modifiers.** Ctrl, Alt and Shift work like real keys with more than one finger:
+  - hold Ctrl or Alt with one finger and tap another key (Alt+Tab, Ctrl+C);
+  - tap once = next key only, tap twice = locked;
+  - combinations such as Alt+Shift (language switch in Windows/remote sessions) are sent as real key presses.
+- **Backspace hold:**
+  - in terminals: repeats characters, accelerating;
+  - elsewhere: 6 characters, then whole words.
 - **Multilingual Input Support:** KDE's keyboard layout follows the Steam keyboard language, so characters arrive as real keys, including in Chrome. Your own layout comes back when the keyboard closes.
 - **Stacking:** the keyboard stays above the app launcher and popups.
 - **Controller typing (input profiles, detected automatically):**
@@ -92,7 +100,8 @@ Restart Steam afterwards for the completely stock keyboard. Only what the tweak 
 
 | Feature | Lenovo Legion Go, SteamOS 3.9.5 | Steam Deck / other SteamOS devices |
 |---|---|---|
-| Placement, Hide, transparency, stacking, Ctrl/Alt, long press, Backspace | Reference Verified | compatible by capability, untested |
+| Placement, Hide, transparency, stacking, Backspace hold | Reference Verified | compatible by capability, untested |
+| Long-press special symbols (physical Shift chords on EN/RU, popup entries), emoji on 🌐 hold, multi-touch Ctrl/Alt/Shift | Reference Verified | compatible by capability, untested (physical chords need `/dev/uinput`, standard on SteamOS) |
 | Tab / Shift+Tab | Reference Verified (trusted Chrome key events; on-screen Shift + Tab) | compatible by capability, untested |
 | Multilingual: English ↔ Russian sync, restore on Hide, reopen | Reference Verified (v41, live on 2026-11-23) | compatible by capability, untested |
 | Multilingual: other XKB layouts (de, fr, es, ua, …) | same code path; not tested by native speakers | — |

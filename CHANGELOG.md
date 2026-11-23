@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- README and keyboard guide describe long-press special symbols, emoji on 🌐 hold, multi-touch Ctrl/Alt/Shift and Backspace word deletion.
 - Real screenshots of the Steam keyboard enhancement (bottom and top position) from the reference Legion Go, in the README and the keyboard guide.
 
 ## 0.2.2-beta — 2026-11-24

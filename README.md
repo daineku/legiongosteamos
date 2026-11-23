@@ -36,7 +36,7 @@ Every tweak installs with one command, can be checked and rolled back, and is **
 ### Input & controller experience
 | Tweak | What you notice | Runs on |
 |---|---|---|
-| [**steam-keyboard**](tweaks/steam-keyboard/) | Valve's on-screen keyboard becomes a practical desktop typing tool:<br>• proper placement and a real Hide key<br>• Ctrl/Alt and Tab between fields<br>• typing in any configured language<br>• **dual-joystick typing** on the Legion Go | any SteamOS device with KDE Desktop Mode (dual-joystick: InputPlumber handhelds) |
+| [**steam-keyboard**](tweaks/steam-keyboard/) | Valve's on-screen keyboard becomes a practical desktop typing tool:<br>• proper placement and a real Hide key<br>• Ctrl/Alt and Tab between fields<br>• typing in any configured language<br>• long-press special symbols and emoji (hold 🌐)<br>• multi-touch shortcuts like Alt+Tab<br>• **dual-joystick typing** on the Legion Go | any SteamOS device with KDE Desktop Mode (dual-joystick: InputPlumber handhelds) |
 
 ### SteamOS software enhancements
 | Tweak | What you notice | Runs on |
@@ -64,6 +64,19 @@ Real screenshots from the reference Legion Go (Desktop Mode, SteamOS 3.9.5). The
 |---|---|
 | ![Steam keyboard at the bottom, edge to edge, semi-transparent](docs/images/steam-keyboard-bottom.png) | ![Steam keyboard at the top, directly under the KDE panel, with text typed into an editor](docs/images/steam-keyboard-top.png) |
 | Flush with the bottom edge and edge to edge; the editor and wallpaper show through the semi-transparent keys. The move key (bottom left) replaces Emoji; Ctrl and Alt sit next to 🌐; Hide closes it. | Moved to the top with one tap, directly under the KDE panel, so the text being typed at the bottom of the editor stays visible. |
+
+## Typing details that make the difference
+
+- **Long press for special symbols:**
+  - hold a key, release, get its second symbol (`9` → `(`, `2` → `@`, Russian `3` → `№`);
+  - slide to any entry in Steam's popup (e.g. `₽` on `8`);
+  - English and Russian symbols are sent as real Shift + key presses, so they arrive correctly everywhere.
+- **Emoji:** tap 🌐 to switch language, hold it to open Steam's emoji picker.
+- **Multi-touch modifiers:**
+  - hold Ctrl or Alt with one finger and tap with another (Alt+Tab, Ctrl+C);
+  - tap once for one key, twice to lock;
+  - Alt+Shift and similar combinations work as real key presses.
+- **Backspace hold:** whole words in text fields, characters in terminals.
 
 ## Dual-joystick typing: Steam's dual-cursor keyboard, adapted to the Legion Go
 
