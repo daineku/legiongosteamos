@@ -15,7 +15,7 @@ fi
 profiles=$(lg_input_profiles)
 lg_info "keyboard input profiles on this device: ${profiles:-none detected}"
 case " $profiles " in
-    *" dual-joystick "*) lg_ok "dual-joystick typing available (sticks = left/right key cursors, triggers = press)" ;;
+    *" dual-joystick "*) lg_ok "dual-joystick typing available (sticks = left/right key cursors, LT / R3 = press, RT = desktop click)" ;;
     *" dual-trackpad "*) lg_ok "dual-trackpad typing is Steam's own; the joystick bridge stays off" ;;
 esac
 if lg_in_plasma_session; then lg_ok "running inside a Plasma session"; else lg_info "not inside a Plasma session (the service starts at the next Desktop Mode login)"; fi
