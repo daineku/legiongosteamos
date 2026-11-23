@@ -1,0 +1,9 @@
+# build outputs and caches (precision-touchpad/build/build-patched.sh)
+tweaks/precision-touchpad/build/out/
+tweaks/precision-touchpad/build/.cargo-cache/
+# test sandboxes
+tests/.sandbox*/
+__pycache__/
+*.pyc
+*.lgtmp.*
+tests/secret-patterns.local
