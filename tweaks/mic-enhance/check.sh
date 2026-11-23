@@ -3,7 +3,7 @@
 . "$LG_REPO/lib/common.sh"
 . "$LG_REPO/tweaks/mic-enhance/mic.sh"
 
-lg_check_platform yes
+lg_check_platform
 lg_req "PipeWire filter-chain service" test -e "$LG_ROOT/usr/lib/systemd/user/filter-chain.service"
 lg_req "CAPS LADSPA plugins (compressor)" test -e "$LG_ROOT/usr/lib/ladspa/caps.so"
 lg_req "pactl, pw-dump and jq available" lg_have pactl pw-dump jq

@@ -2,7 +2,7 @@
 # decky-loader: requirements and detection. Changes nothing.
 . "$LG_REPO/lib/common.sh"
 . "$LG_REPO/tweaks/decky-loader/decky.sh"
-lg_check_platform no
+lg_check_platform
 lg_req "Steam client installed" test -d "$HOME/.local/share/Steam"
 lg_req "curl and sha256sum available" lg_have curl sha256sum
 external=0; detail=""

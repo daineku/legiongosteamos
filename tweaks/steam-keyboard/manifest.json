@@ -10,5 +10,9 @@
     "3.9.5"
   ],
   "summary": "Enhances the original Steam keyboard for everyday Desktop Mode typing: flush top/bottom placement with a move key, a real Hide key, transparency, Ctrl/Alt keys, long-press symbols, genuine Tab/Shift+Tab form navigation, Multilingual Input Support (KDE layout follows the Steam keyboard language for every language with an XKB layout; input-method languages stay on Steam's native path), the keyboard above Plasma popups, and Legion Go sticks/triggers/touchpad/D-pad while it is open. Applied at runtime; no Steam files are patched.",
-  "restart": "Restart Steam once if the installer enabled Steam's local debugger; otherwise the keyboard is enhanced the next time it opens."
+  "restart": "Restart Steam once if the installer enabled Steam's local debugger; otherwise the keyboard is enhanced the next time it opens.",
+  "layer": "portable",
+  "category": "input",
+  "hardware": "portable",
+  "version_policy": "feature"
 }

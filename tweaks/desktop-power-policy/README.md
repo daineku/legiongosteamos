@@ -1,8 +1,8 @@
 # Desktop Power Policy
 
-**Experimental** · Desktop Mode (system service) · needs sudo · id `desktop-power-policy`
+**Reference Verified** (Lenovo Legion Go, SteamOS 3.9.5) · portable by capability · Desktop Mode (system service) · needs sudo · id `desktop-power-policy`
 
-> Keeps the desktop efficient on battery and fast on AC, without touching Gaming Mode.
+> Keeps the desktop responsive during everyday work, without unnecessarily aggressive CPU behaviour at idle, and leaves Gaming Mode to Steam.
 
 ## What It Does
 
@@ -14,6 +14,15 @@ A small event-driven service, active **only in Desktop Mode**:
 | Charger | performance (20 / 20 / 35 W) | balance_performance |
 
 It also turns CPU boost, SMT and automatic GPU clocks back on if a game tool left them off. In Gaming Mode it writes nothing, so Steam or SimpleDeckyTDP stay in control.
+
+**Portable by capability.** The policy uses whatever the device offers and skips the rest:
+- **Lenovo firmware profiles:** only on the Legion Go;
+- **EPP:** amd-pstate-epp, or intel_pstate in active mode;
+- **CPU boost:** per-policy cpufreq `boost`.
+
+`check` lists what it found. On a device with none of these it reports *incompatible*.
+
+**CPU boost is not "maximum frequency".** Boost on keeps dynamic frequency scaling. The CPU still idles low and only boosts under load. Measured on the reference device, idle on battery: boost on 7.29 W vs boost off 7.15 W (within noise). Boost on made fixed 16-process work 7 % faster (1.59 s vs 1.70 s), at about +3 °C peak temperature. Short single-thread bursts were the same.
 
 ## Why You Need It
 
@@ -37,20 +46,20 @@ Desktop use draws a little less power on battery without feeling slower, and Gam
 ## Install — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install desktop-power-policy
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install desktop-power-policy
 ```
 
 ## Uninstall — One Command
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.1; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.1 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall desktop-power-policy
+d=~/.local/share/legiongo-steamos/v0.2.2-beta; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.2-beta https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall desktop-power-policy
 ```
 
 This restores the firmware profile and energy preference that were active when you installed it.
 
 ## How to Check It Works
 
-`~/.local/share/legiongo-steamos/v0.2.1/legiongo.sh status desktop-power-policy` shows the firmware profile and EPP. `journalctl -u legion-power-policy -n 3` shows lines like `applied desktop policy (...): battery, balanced`. Pause the policy with `sudo touch /etc/legion-power/disabled`.
+`~/.local/share/legiongo-steamos/v0.2.2-beta/legiongo.sh status desktop-power-policy` shows the firmware profile and EPP. `journalctl -u legion-power-policy -n 3` shows lines like `applied desktop policy (...): battery, balanced`. Pause the policy with `sudo touch /etc/legion-power/disabled`.
 
 ## Dependencies
 
@@ -60,11 +69,16 @@ This restores the firmware profile and energy preference that were active when y
 
 ## Compatibility
 
-Legion Go (1st gen), SteamOS 3.9.5. The battery path was measured. The charger path is implemented but was **not tested**. Gaming Mode is untouched by design. The installer was validated in isolated test installs.
+| | Status |
+|---|---|
+| Legion Go (1st gen), SteamOS 3.9.5: battery path | Reference Verified, measured (−0.75 W idle) |
+| Legion Go: AC path | Reference Verified functionally: 7 automatic switches to the performance profile on charger/resume in the logs, 0 errors (power on AC not measured) |
+| Legion Go: 22+ suspend/resume cycles | re-applied after every resume |
+| Other devices with EPP / boost control (e.g. Steam Deck) | compatible by capability, untested. The Legion Go values are not assumed to be optimal there. |
 
 ## Known Limitations
 
-- **Experimental:** the values are the reference owner's choice, not a universal optimum. You can change `POLICY` in `/etc/legion-power/legion-power-policy.py` and restart the service.
+- The values are the reference owner's choice, not a universal optimum. You can change `POLICY` in `/etc/legion-power/legion-power-policy.py` and restart the service.
 - It writes a small evidence log to `/var/log/legion-power/` (battery before/after sleep), which is kept after uninstall.
 
 Technical details: [docs/technical/desktop-power-policy.md](../../docs/technical/desktop-power-policy.md)

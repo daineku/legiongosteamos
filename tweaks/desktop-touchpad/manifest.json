@@ -5,8 +5,16 @@
   "status": "Reference Verified",
   "scope": "Desktop",
   "requires_root": false,
-  "depends": ["precision-touchpad"],
-  "tested_steamos": ["3.9.5"],
+  "depends": [
+    "precision-touchpad"
+  ],
+  "tested_steamos": [
+    "3.9.5"
+  ],
   "summary": "On SteamOS the Legion Go touchpad reaches the desktop only through the Steam client, so it stops working when Steam is closed or crashes. This small event-driven user service gives the touchpad to KDE whenever Steam is not using it and hands it back the moment Steam returns, so there is never double cursor movement.",
-  "restart": "Nothing. The service starts immediately in Desktop Mode."
+  "restart": "Nothing. The service starts immediately in Desktop Mode.",
+  "layer": "hardware",
+  "category": "legion-go",
+  "hardware": "legion-go",
+  "version_policy": "tested"
 }

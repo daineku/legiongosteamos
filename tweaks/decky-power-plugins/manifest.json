@@ -2,11 +2,19 @@
   "id": "decky-power-plugins",
   "name": "Decky Power & Controller Plugins (safe setup)",
   "version": "1.0.0",
-  "status": "Experimental",
+  "status": "Reference Verified",
   "scope": "Gaming Mode (Decky plugins)",
   "requires_root": true,
-  "depends": ["decky-loader"],
-  "tested_steamos": ["3.9.5"],
+  "depends": [
+    "decky-loader"
+  ],
+  "tested_steamos": [
+    "3.9.5"
+  ],
   "summary": "Installs SimpleDeckyTDP v1.0.7 (per-game TDP, CPU boost, SMT, EPP, GPU controls in Gaming Mode) and LegionGoRemapper v0.3.0 (Legion Go button remapping, RGB, fan curves, charge limit) from their official releases, verified by SHA-256, with our safety patch for LegionGoRemapper and conservative starting settings: boost and SMT on, EPP balance_performance, no SMU write at startup, and every LegionGoRemapper feature off until you enable it.",
-  "restart": "Open the Quick Access menu > Decky in Gaming Mode to use the plugins."
+  "restart": "Open the Quick Access menu > Decky in Gaming Mode to use the plugins.",
+  "layer": "hardware",
+  "category": "legion-go",
+  "hardware": "legion-go",
+  "version_policy": "tested"
 }

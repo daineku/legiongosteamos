@@ -2,7 +2,7 @@
 # decky-power-plugins: requirements and detection. Changes nothing.
 . "$LG_REPO/lib/common.sh"
 . "$LG_REPO/tweaks/decky-power-plugins/plugins.sh"
-lg_check_platform yes
+lg_check_platform
 lg_req "curl, unzip, tar, git (for the patch) available" lg_have curl unzip tar git
 lg_req_soft "Decky Loader installed" test -e "$HB/services/PluginLoader"
 external=0; detail=""

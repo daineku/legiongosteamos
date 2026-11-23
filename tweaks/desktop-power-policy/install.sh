@@ -10,6 +10,7 @@ for d in "$LG_ROOT"/sys/class/platform-profile/*; do
         lg_state_set profile_before "$(cat "$d/profile")"
     fi
 done
+[ -n "$(lg_state_get boost_before)" ] || lg_state_set boost_before "$(cat "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/boost" 2>/dev/null)"
 [ -n "$(lg_state_get epp_before)" ] || lg_state_set epp_before "$(cat "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference" 2>/dev/null)"
 
 sed "s|@USER_HOME@|$HOME|" "$F/legion-power-policy.py.in" | lg_put_content "$LG_ROOT/etc/legion-power/legion-power-policy.py" 644 root

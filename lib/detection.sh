@@ -65,3 +65,21 @@ lg_python_gi() {   # lg_python_gi Gio 2.0 [Atspi 2.0 ...]
     done
     python3 -c "$code" >/dev/null 2>&1
 }
+
+# On-screen keyboard input profiles the hardware can drive (capability detection, not device names):
+#   dual-joystick  InputPlumber's virtual Steam Deck controller (28DE:12FE): steam-keyboard's bridge maps the
+#                  left/right sticks to the keyboard's left/right cursors and the triggers to key presses
+#   dual-trackpad  a real Steam Deck controller (28DE:1205): Steam's own dual-trackpad typing; the bridge stays off
+#   touchscreen    a touchscreen input device
+lg_input_profiles() {
+    local out="" f
+    for f in "$LG_ROOT"/sys/class/hidraw/hidraw*/device/uevent; do
+        [ -r "$f" ] || continue
+        case "$(cat "$f")" in
+            *HID_ID=0003:000028DE:000012FE*) case "$out" in *dual-joystick*) ;; *) out="$out dual-joystick" ;; esac ;;
+            *HID_ID=0003:000028DE:00001205*) case "$out" in *dual-trackpad*) ;; *) out="$out dual-trackpad" ;; esac ;;
+        esac
+    done
+    grep -lq "ID_INPUT_TOUCHSCREEN=1" "$LG_ROOT"/run/udev/data/c13:* 2>/dev/null && out="$out touchscreen"
+    echo "${out# }"
+}

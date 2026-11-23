@@ -45,6 +45,8 @@ lg_doctor() {
     done
     echo
     echo "Compatibility probes"
+    _dr "keyboard input profiles" "$(lg_input_profiles)"
+    _dr "CPU frequency driver" "$(cat "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver" 2>/dev/null) (EPP $([ -e "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference" ] && echo yes || echo no), boost $(cat "$LG_ROOT/sys/devices/system/cpu/cpu0/cpufreq/boost" 2>/dev/null || echo n/a))"
     # precision-touchpad: does the stock profile already read the touchpad interface natively?
     if grep -q 'interface_num: 1' "$LG_ROOT/usr/share/inputplumber/devices/50-legion_go.yaml" 2>/dev/null; then
         _dr "stock touchpad driver" "native (stock InputPlumber reads the touchpad interface)"

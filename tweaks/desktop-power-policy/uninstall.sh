@@ -19,6 +19,11 @@ if [ -n "$eb" ]; then
     done
     lg_ok "EPP restored to $eb"
 fi
+bb=$(lg_state_get boost_before)
+if [ "$bb" = 0 ]; then
+    for f in "$LG_ROOT"/sys/devices/system/cpu/cpu*/cpufreq/boost; do printf 0 | lg_root tee "$f" >/dev/null 2>&1 || true; done
+    lg_ok "CPU boost restored to off (as before installation)"
+fi
 lg_info "Evidence logs in /var/log/legion-power were kept (delete them with: sudo rm -r /var/log/legion-power)."
 lg_state_archive
 [ "$kept" = 0 ]

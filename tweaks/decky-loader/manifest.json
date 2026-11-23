@@ -6,7 +6,13 @@
   "scope": "Gaming Mode plugins (system service)",
   "requires_root": true,
   "depends": [],
-  "tested_steamos": ["3.9.5"],
+  "tested_steamos": [
+    "3.9.5"
+  ],
   "summary": "Installs the community plugin loader for the Steam client (Decky Loader v3.3.1) from its official GitHub release, verified by SHA-256, with the same layout as Decky's own installer. Needed only for Decky plugins such as the decky-power-plugins tweak; no other tweak requires it.",
-  "restart": "Restart Steam (or switch to Gaming Mode) to see the Decky menu in the Quick Access menu."
+  "restart": "Restart Steam (or switch to Gaming Mode) to see the Decky menu in the Quick Access menu.",
+  "layer": "portable",
+  "category": "power",
+  "hardware": "portable",
+  "version_policy": "tested"
 }
