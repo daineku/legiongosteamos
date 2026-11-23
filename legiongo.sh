@@ -121,9 +121,13 @@ cmd_status() {
         echo "  state dir:    $LG_STATE/$t"
     fi
     if [ -f "$LG_REPO/tweaks/$t/status.sh" ]; then run_script "$t" status.sh | sed 's/^/  /'; fi
-    if [ "$CHECK_STATE" = installed ] && [ -f "$LG_REPO/tweaks/$t/verify.sh" ]; then
-        local vr; LG_VERIFY_QUICK=1 run_script "$t" verify.sh >/dev/null 2>&1; vr=$?
-        echo "  working:      $(case $vr in 0) echo yes ;; 2) echo "not checkable right now (e.g. outside Desktop Mode)" ;; *) echo "NO — run: ./legiongo.sh check $t" ;; esac)"
+    if [ "$CHECK_STATE" = installed ]; then
+        case "$(functional_state "$t" 1)" in
+            verified) echo "  working:      yes (verified now)" ;;
+            pending)  echo "  working:      verification pending (cannot be tested right now, e.g. outside Desktop Mode)" ;;
+            broken)   echo "  working:      NO — functional check failed; repair with: ./legiongo.sh update $t" ;;
+            n/a)      echo "  working:      (no runtime component)" ;;
+        esac
     fi
 }
 
@@ -180,7 +184,7 @@ cmd_install() {
             run_script "$t" verify.sh; vrc=$?
             case "$vrc" in
                 0) ;;
-                2) lg_warn "functional verification deferred (see above); it runs automatically when the condition is met" ;;
+                2) ;;
                 *) why="functional verification failed (see above)" ;;
             esac
         fi
@@ -192,7 +196,15 @@ cmd_install() {
         rollback_deps "${installed_deps[@]+"${installed_deps[@]}"}"
         lg_die "rollback finished; nothing of $t remains active. Log: $LG_STATE/.uninstalled/"
     fi
-    lg_ok "$t installed and verified"
+    # Three outcomes only: Installed & Verified / Installed — Verification Pending / Failed (rolled back above).
+    if [ "$vrc" = 2 ]; then
+        LG_TWEAK="$t" lg_state_set verification pending
+        lg_warn "RESULT: $t is INSTALLED — VERIFICATION PENDING. It could not be tested right now (reason above)."
+        lg_info "Check it later with: ./legiongo.sh status $t"
+    else
+        LG_TWEAK="$t" lg_state_set verification verified
+        lg_ok "RESULT: $t is INSTALLED & VERIFIED"
+    fi
     lg_info "Next: $(lg_mf .restart "$t")"
 }
 
@@ -203,6 +215,14 @@ rollback_deps() {
         lg_warn "rolling back dependency '${!i}' installed in this transaction"
         run_script "${!i}" uninstall.sh --rollback || true
     done
+}
+
+# Functional state of an installed tweak: verified | pending | broken | n/a (no runtime component)
+functional_state() {   # functional_state TWEAK [quick]
+    [ -f "$LG_REPO/tweaks/$1/verify.sh" ] || { echo n/a; return; }
+    local rc
+    LG_VERIFY_QUICK="${2:-0}" run_script "$1" verify.sh >/dev/null 2>&1; rc=$?
+    case "$rc" in 0) echo verified ;; 2) echo pending ;; *) echo broken ;; esac
 }
 
 cmd_update() {
@@ -216,8 +236,16 @@ cmd_update() {
     have=$(lg_state_get version "$t"); want=$(lg_mf .version "$t")
     if [ "$have" = "$want" ]; then
         check_state "$t"
-        if [ "$CHECK_STATE" = installed ]; then lg_ok "$t is up to date (v$want)"; return 0; fi
-        lg_info "$t v$want reports '$CHECK_STATE' ($CHECK_DETAIL); repairing"
+        if [ "$CHECK_STATE" = installed ]; then
+            # unchanged files are not enough: the tweak must also work
+            case "$(functional_state "$t")" in
+                verified|n/a) lg_ok "$t is up to date (v$want) and working"; return 0 ;;
+                pending) lg_ok "$t is up to date (v$want); verification pending (cannot be tested right now)"; return 0 ;;
+                broken) lg_warn "$t v$want: files intact but the functional check FAILS; repairing" ;;
+            esac
+        else
+            lg_info "$t v$want reports '$CHECK_STATE' ($CHECK_DETAIL); repairing"
+        fi
     else
         lg_step "Updating $t: v$have -> v$want"
     fi

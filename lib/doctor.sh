@@ -36,6 +36,13 @@ lg_doctor() {
                 rec+=("update $t:  ./legiongo.sh update $t")
             fi
         fi
+        if [ "$st" = installed ]; then
+            case "$(functional_state "$t" 1)" in
+                verified) line="$line — working" ;;
+                pending)  line="$line — verification pending" ;;
+                broken)   line="$line — BROKEN"; rec+=("$t fails its functional check: ./legiongo.sh update $t (repair) or ./legiongo.sh check $t") ;;
+            esac
+        fi
         _dr "$t" "$line"
         case "$st" in
             partial) rec+=("$t is incomplete: ./legiongo.sh install $t (repair) or ./legiongo.sh uninstall $t") ;;
