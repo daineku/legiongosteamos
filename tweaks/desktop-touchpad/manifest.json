@@ -2,7 +2,7 @@
   "id": "desktop-touchpad",
   "name": "Desktop Touchpad Without Steam",
   "version": "1.0.0",
-  "status": "Partially Verified",
+  "status": "Reference Verified",
   "scope": "Desktop",
   "requires_root": false,
   "depends": ["precision-touchpad"],

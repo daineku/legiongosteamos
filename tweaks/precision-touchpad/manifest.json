@@ -1,8 +1,8 @@
 {
   "id": "precision-touchpad",
   "name": "Precision Touchpad (upstream InputPlumber)",
-  "version": "0.84.0-1",
-  "status": "Partially Verified",
+  "version": "0.84.0-2",
+  "status": "Reference Verified",
   "scope": "System (Desktop + Gaming)",
   "requires_root": true,
   "depends": [],

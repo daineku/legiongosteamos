@@ -1,20 +1,27 @@
 #!/bin/bash
-# precision-touchpad: requirements and detection. Changes nothing.
+# precision-touchpad: requirements and feature-level detection. Changes nothing.
 . "$LG_REPO/lib/common.sh"
 . "$LG_REPO/tweaks/precision-touchpad/common-ip.sh"
 
 lg_check_platform yes
 lg_req "InputPlumber service present" test -e "$LG_ROOT/usr/lib/systemd/system/inputplumber.service"
 lg_req "download and verification tools (curl, tar, sha256sum)" lg_have curl tar sha256sum
+case "$IP_VARIANT" in release|glide|tapfilter) lg_ok "variant: $IP_VARIANT" ;;
+    *) lg_error "unknown LG_IP_VARIANT '$IP_VARIANT' (release, glide, tapfilter)"; LG_FAIL=1 ;; esac
+
 stock=$(lg_pkg_version inputplumber)
-not_needed=""
-if [ -n "$stock" ]; then
-    if lg_version_ge "$stock" "$IP_FIXED_IN"; then
-        lg_ok "SteamOS ships InputPlumber $stock, which already contains the touchpad fix"
-        not_needed="SteamOS InputPlumber $stock already includes the fix (>= $IP_FIXED_IN)"
-    else
-        lg_ok "SteamOS ships InputPlumber $stock (touchpad fix arrived upstream in $IP_FIXED_IN)"
-    fi
+equivalent=""; conflict=""
+if ip_stock_has_native_touchpad; then
+    lg_info "stock InputPlumber ${stock:-?} already reads the touchpad natively (~106 Hz path)"
+    # The rate fix is upstream now; the patched variants still add the lift-off tap filter.
+    # As a dependency (desktop-touchpad) only the native driver matters, which stock already has.
+    { [ "$IP_VARIANT" = release ] || [ "${LG_AS_DEPENDENCY:-0}" = 1 ]; } && equivalent="stock InputPlumber ${stock:-?} already includes the native touchpad driver; the 'release' variant would add nothing (the glide/tapfilter variants still add tap filtering)"
+else
+    lg_ok "stock InputPlumber ${stock:-?} uses the ~40 Hz gamepad-report touchpad path: this tweak improves it"
+fi
+if [ -n "$stock" ] && [ "$(lg_vercmp "$stock" "$IP_VERSION")" = 1 ]; then
+    conflict="stock InputPlumber $stock is newer than this tweak's base $IP_VERSION; installing would downgrade it. The patches must be rebuilt for $stock first (docs/MAINTAINING.md)"
+    lg_warn "$conflict"
 fi
 
 external=0; detail=""
@@ -28,7 +35,9 @@ for f in "$IP_DROPIN_DIR"/*.conf; do
         lg_info "found existing override: $f"
     fi
 done
-if ! lg_is_tracked_tweak && [ "$external" = 0 ] && [ -n "$not_needed" ]; then
-    echo "RESULT=not-needed $not_needed"; exit 0
+[ "${LG_AS_DEPENDENCY:-0}" = 1 ] && [ -n "$equivalent" ] && conflict=""
+if ! lg_is_tracked_tweak && [ "$external" = 0 ] && [ -z "$conflict" ] && [ -n "$equivalent" ] && [ "$LG_FAIL" = 0 ]; then
+    echo "RESULT=upstream-equivalent $equivalent"; exit 0
 fi
-lg_check_result "$external" "" "$detail"
+lg_is_tracked_tweak && conflict=""
+lg_check_result "$external" "$conflict" "$detail"

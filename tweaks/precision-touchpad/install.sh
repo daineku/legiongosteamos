@@ -21,15 +21,31 @@ SRC="$WORK/inputplumber"
 [ -d "$SRC/usr/share/inputplumber/devices" ] || lg_die "unexpected archive layout"
 
 BIN="$SRC/usr/bin/inputplumber"
+[ "$(lg_sha "$BIN")" = "$IP_RELEASE_BIN_SHA" ] || lg_die "release binary checksum mismatch"
 if [ -n "${LG_IP_BINARY:-}" ]; then
     [ -x "$LG_IP_BINARY" ] || lg_die "LG_IP_BINARY=$LG_IP_BINARY is not an executable file"
     "$LG_IP_BINARY" --version 2>/dev/null | grep -q "$IP_VERSION" || lg_die "$LG_IP_BINARY is not InputPlumber $IP_VERSION"
-    lg_warn "using your own build $LG_IP_BINARY (sha256 $(lg_sha "$LG_IP_BINARY"))"
+    lg_warn "using your own build $LG_IP_BINARY (sha256 $(lg_sha "$LG_IP_BINARY"), $(ip_variant_of "$(lg_sha "$LG_IP_BINARY")"))"
     lg_confirm "Install this binary as InputPlumber?" || lg_die "cancelled"
     BIN="$LG_IP_BINARY"
-else
-    [ "$(lg_sha "$BIN")" = "$IP_RELEASE_BIN_SHA" ] || lg_die "release binary checksum mismatch"
+elif [ "$IP_VARIANT" != release ]; then
+    want=$(ip_variant_sha "$IP_VARIANT")
+    if [ -n "${LG_IP_PATCHED_DIR:-}" ]; then                      # offline / test use
+        cp "$LG_IP_PATCHED_DIR/inputplumber-$IP_VERSION-$IP_VARIANT" "$WORK/patched"
+    elif [ "${LG_IP_BUILD:-0}" = 1 ]; then
+        lg_step "Building the $IP_VARIANT variant from source (podman, several minutes)"
+        bash "$LG_REPO/tweaks/precision-touchpad/build/build-patched.sh" "$IP_VARIANT"
+        cp "$LG_REPO/tweaks/precision-touchpad/build/out/inputplumber-$IP_VERSION-$IP_VARIANT" "$WORK/patched"
+    else
+        lg_step "Downloading the $IP_VARIANT build (reproducible from patches/legion-touchpad-$IP_VARIANT.patch)"
+        curl -fsSL -o "$WORK/patched" "$IP_ASSET_BASE/inputplumber-$IP_VERSION-$IP_VARIANT"
+    fi
+    [ "$(lg_sha "$WORK/patched")" = "$want" ] || lg_die "$IP_VARIANT binary checksum mismatch (expected $want)"
+    lg_ok "$IP_VARIANT binary checksum verified"
+    chmod 755 "$WORK/patched"
+    BIN="$WORK/patched"
 fi
+lg_state_set variant "$IP_VARIANT"
 lg_state_set binary_sha "$(lg_sha "$BIN")"
 
 lg_step "Installing to ${IP_DEST#"$LG_ROOT"} (root-owned; /home survives SteamOS updates)"
