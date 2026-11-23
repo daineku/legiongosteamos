@@ -1,0 +1,12 @@
+{
+  "id": "desktop-power-policy",
+  "name": "Desktop Power Policy",
+  "version": "1.0.0",
+  "status": "Experimental",
+  "scope": "Desktop (system service)",
+  "requires_root": true,
+  "depends": [],
+  "tested_steamos": ["3.9.5"],
+  "summary": "An event-driven root service that applies a Desktop Mode power policy through Lenovo's firmware profile: on battery the 'balanced' gamezone profile, on AC 'performance', with EPP balance_performance, and it re-enables CPU boost/SMT/GPU auto if a Gaming Mode tool left them disabled. It writes nothing while Gaming Mode is active, so Steam or SimpleDeckyTDP keep full control there.",
+  "restart": "Nothing. The service starts immediately and acts only in Desktop Mode."
+}

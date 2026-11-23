@@ -1,0 +1,390 @@
+#!/usr/bin/env python3
+"""legion-power-policy: Desktop Mode power policy for the original Lenovo Legion Go (SteamOS).
+
+Ownership (see tweaks/desktop-power-policy/README.md in the legiongo-steamos repository):
+  Gaming Mode  -> SimpleDeckyTDP (Decky) owns TDP / CPU boost / SMT / EPP / GPU. This daemon writes NOTHING.
+  Desktop Mode -> this daemon owns: Lenovo gamezone platform profile (firmware TDP + fan behaviour),
+                  EPP on all CPUs, and makes sure CPU boost / SMT / GPU auto are not left disabled.
+Event-driven only (GLib main loop, no polling):
+  - logind seat0 ActiveSession changes / SessionNew / SessionRemoved  -> re-evaluate mode
+  - UPower OnBattery changes                                          -> re-apply (desktop only)
+  - logind PrepareForSleep(false) (resume)                            -> re-apply once, 3 s later
+  - ~/.steam/steam.pid rewritten (Steam restarted)                    -> unload SimpleDeckyTDP's frontend in the
+                                                                         DESKTOP Steam client (session-only, via
+                                                                         Steam's local CEF debugger), then re-apply
+Policy (measured on the reference device, see the README):
+  battery -> gamezone "balanced" (15/15/30 W) + EPP balance_performance
+  AC      -> gamezone "performance" (20/20/35 W) + EPP balance_performance
+Writes only values that differ, verifies by read-back. Disable: touch /etc/legion-power/disabled.
+"""
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+import base64, ctypes, ctypes.util, json, os, socket, struct, sys, time, urllib.request
+import gi
+gi.require_version("Gio", "2.0")
+from gi.repository import Gio, GLib
+
+CONF_DIR = "/etc/legion-power"
+DISABLED = os.path.join(CONF_DIR, "disabled")
+STATE = "/run/legion-power-policy.state"
+GZ_NAME = "lenovo-wmi-gamezone"
+CPU = "/sys/devices/system/cpu"
+GPU_LEVEL = "/sys/class/drm/card0/device/power_dpm_force_performance_level"
+POLICY = {False: {"profile": "performance", "epp": "balance_performance"},   # on_battery=False (AC)
+          True: {"profile": "balanced", "epp": "balance_performance"}}       # on battery
+STEAM_PID_DIR = "@USER_HOME@/.steam"          # filled in by the installer
+EVIDENCE = "/var/log/legion-power"          # read-only evidence: sleep drain + Gaming Mode snapshots (JSON lines)
+WMI_ATTR = "/sys/class/firmware-attributes/lenovo-wmi-other-0/attributes"
+CDP = ("127.0.0.1", 8080)
+# Gaming-Mode plugins whose frontends must not act in Desktop Mode (they also load into desktop Steam)
+GAMING_PLUGINS = ["SimpleDeckyTDP", "LegionGoRemapper"]
+
+
+def log(*a):
+    print("legion-power:", *a, flush=True)
+
+
+def rd(p):
+    try:
+        with open(p) as f:
+            return f.read().strip()
+    except OSError:
+        return None
+
+
+def wr(p, v):
+    """write only if different; return True if the value now matches"""
+    cur = rd(p)
+    if cur is None:
+        return False
+    if cur == v:
+        return True
+    try:
+        with open(p, "w") as f:
+            f.write(v)
+    except OSError as e:
+        log("write failed", p, v, e)
+        return False
+    ok = rd(p) == v
+    log("set", p, cur, "->", v, "" if ok else "(READ-BACK MISMATCH)")
+    return ok
+
+
+def snapshot():
+    """read-only hardware state snapshot"""
+    gz = gamezone_dir()
+    epps = sorted({rd(os.path.join(CPU, c, "cpufreq", "energy_performance_preference")) for c in os.listdir(CPU)
+                   if c.startswith("cpu") and c[3:].isdigit()} - {None})
+    snap = {"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "gamezone": rd(os.path.join(gz, "profile")) if gz else None,
+            "spl": rd(WMI_ATTR + "/ppt_pl1_spl/current_value"), "sppt": rd(WMI_ATTR + "/ppt_pl2_sppt/current_value"),
+            "fppt": rd(WMI_ATTR + "/ppt_pl3_fppt/current_value"), "boost": rd(os.path.join(CPU, "cpu0/cpufreq/boost")),
+            "smt": rd(os.path.join(CPU, "smt/control")), "online": rd(os.path.join(CPU, "online")), "epp": epps,
+            "governor": rd(os.path.join(CPU, "cpu0/cpufreq/scaling_governor")), "gpu_level": rd(GPU_LEVEL),
+            "max_freq_khz": rd(os.path.join(CPU, "cpu0/cpufreq/scaling_max_freq")),
+            "energy_uwh": rd("/sys/class/power_supply/BATT/energy_now"), "batt_status": rd("/sys/class/power_supply/BATT/status"),
+            "batt_power_uw": rd("/sys/class/power_supply/BATT/power_now"), "cap": rd("/sys/class/power_supply/BATT/capacity")}
+    for h in os.listdir("/sys/class/hwmon"):
+        n = rd("/sys/class/hwmon/%s/name" % h)
+        if n in ("k10temp", "amdgpu"):
+            snap[n + "_c"] = (int(rd("/sys/class/hwmon/%s/temp1_input" % h) or 0)) / 1000
+    return snap
+
+
+def evidence(kind, **extra):
+    try:
+        os.makedirs(EVIDENCE, exist_ok=True)
+        rec = dict(snapshot(), kind=kind, **extra)
+        with open(os.path.join(EVIDENCE, "evidence.jsonl"), "a") as f:
+            f.write(json.dumps(rec) + "\n")
+        return rec
+    except Exception as e:
+        log("evidence write failed:", e)
+
+
+def gamezone_dir():
+    base = "/sys/class/platform-profile"
+    try:
+        for d in os.listdir(base):
+            if rd(os.path.join(base, d, "name")) == GZ_NAME:
+                return os.path.join(base, d)
+    except OSError:
+        pass
+    return None
+
+
+# ------------------------------------------------------------------ minimal CDP (sync, bounded timeouts)
+def cdp_eval(expr, timeout=5.0):
+    targets = json.load(urllib.request.urlopen("http://%s:%d/json" % CDP, timeout=2))
+    t = next(t for t in targets if t.get("title") == "SharedJSContext")
+    path = t["webSocketDebuggerUrl"].split(":%d" % CDP[1], 1)[1]
+    s = socket.create_connection(CDP, timeout=timeout)
+    try:
+        key = base64.b64encode(os.urandom(16)).decode()
+        s.sendall(("GET %s HTTP/1.1\r\nHost: %s:%d\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+                   "Sec-WebSocket-Key: %s\r\nSec-WebSocket-Version: 13\r\n\r\n" % (path, CDP[0], CDP[1], key)).encode())
+        buf = b""
+        while b"\r\n\r\n" not in buf:
+            buf += s.recv(4096)
+        rest = buf.split(b"\r\n\r\n", 1)[1]
+        msg = json.dumps({"id": 1, "method": "Runtime.evaluate",
+                          "params": {"expression": expr, "returnByValue": True, "awaitPromise": True}}).encode()
+        mask = os.urandom(4)
+        n = len(msg)
+        hdr = bytes([0x81]) + (bytes([0x80 | n]) if n < 126 else bytes([0xFE]) + struct.pack(">H", n))
+        s.sendall(hdr + mask + bytes(b ^ mask[i & 3] for i, b in enumerate(msg)))
+        data = rest
+        while True:
+            while len(data) < 2:
+                data += s.recv(65536)
+            ln = data[1] & 0x7F
+            off = 2
+            if ln == 126:
+                while len(data) < 4:
+                    data += s.recv(65536)
+                ln = struct.unpack(">H", data[2:4])[0]; off = 4
+            elif ln == 127:
+                while len(data) < 10:
+                    data += s.recv(65536)
+                ln = struct.unpack(">Q", data[2:10])[0]; off = 10
+            while len(data) < off + ln:
+                data += s.recv(65536)
+            payload, data = data[off:off + ln], data[off + ln:]
+            try:
+                m = json.loads(payload)
+            except ValueError:
+                continue
+            if m.get("id") == 1:
+                return m.get("result", {}).get("result", {}).get("value")
+    finally:
+        s.close()
+
+
+class Policy:
+    def __init__(self):
+        self.sys = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+        self.desktop = False
+        self.on_battery = self.read_on_battery()
+        self.unload_tries = 0
+        self.unload_src = 0
+        s = self.sys
+        s.signal_subscribe("org.freedesktop.login1", "org.freedesktop.login1.Manager", "PrepareForSleep",
+                           "/org/freedesktop/login1", None, Gio.DBusSignalFlags.NONE, self.on_sleep)
+        for sig in ("SessionNew", "SessionRemoved"):
+            s.signal_subscribe("org.freedesktop.login1", "org.freedesktop.login1.Manager", sig,
+                               "/org/freedesktop/login1", None, Gio.DBusSignalFlags.NONE, self.on_session_change)
+        s.signal_subscribe("org.freedesktop.login1", "org.freedesktop.DBus.Properties", "PropertiesChanged",
+                           "/org/freedesktop/login1/seat/seat0", None, Gio.DBusSignalFlags.NONE, self.on_session_change)
+        s.signal_subscribe("org.freedesktop.UPower", "org.freedesktop.DBus.Properties", "PropertiesChanged",
+                           "/org/freedesktop/UPower", None, Gio.DBusSignalFlags.NONE, self.on_upower)
+        self.watch_steam_pid()
+        # Decky (plugin_loader) restarts re-load the plugins into desktop Steam: redo the hand-off
+        s.signal_subscribe("org.freedesktop.systemd1", "org.freedesktop.DBus.Properties", "PropertiesChanged",
+                           "/org/freedesktop/systemd1/unit/plugin_5floader_2eservice", None,
+                           Gio.DBusSignalFlags.NONE, self.on_decky_unit)
+        try:
+            s.call_sync("org.freedesktop.systemd1", "/org/freedesktop/systemd1", "org.freedesktop.systemd1.Manager",
+                        "Subscribe", None, None, Gio.DBusCallFlags.NONE, 2000, None)
+        except GLib.Error:
+            pass
+        self.decky_active = None
+        self.evaluate("start")
+
+    # ---------------- state
+    def read_on_battery(self):
+        try:
+            v = self.sys.call_sync("org.freedesktop.UPower", "/org/freedesktop/UPower", "org.freedesktop.DBus.Properties",
+                                   "Get", GLib.Variant("(ss)", ("org.freedesktop.UPower", "OnBattery")),
+                                   GLib.VariantType("(v)"), Gio.DBusCallFlags.NONE, 2000, None)
+            return bool(v.unpack()[0])
+        except GLib.Error:
+            return rd("/sys/class/power_supply/ACAD/online") != "1"
+
+    def active_desktop(self):
+        """True when seat0's active session is the KDE Plasma desktop (not gamescope / Gaming Mode)."""
+        try:
+            v = self.sys.call_sync("org.freedesktop.login1", "/org/freedesktop/login1/seat/seat0",
+                                   "org.freedesktop.DBus.Properties", "Get",
+                                   GLib.Variant("(ss)", ("org.freedesktop.login1.Seat", "ActiveSession")),
+                                   GLib.VariantType("(v)"), Gio.DBusCallFlags.NONE, 2000, None)
+            sid, spath = v.unpack()[0]
+            if not spath or spath == "/":
+                return False
+            d = self.sys.call_sync("org.freedesktop.login1", spath, "org.freedesktop.DBus.Properties", "Get",
+                                   GLib.Variant("(ss)", ("org.freedesktop.login1.Session", "Desktop")),
+                                   GLib.VariantType("(v)"), Gio.DBusCallFlags.NONE, 2000, None).unpack()[0]
+            return "KDE" in (d or "").upper()
+        except GLib.Error as e:
+            log("logind query failed:", e.message)
+            return False
+
+    # ---------------- events
+    def on_session_change(self, *_):
+        GLib.timeout_add(1500, lambda: (self.evaluate("session change"), False)[1])
+
+    def on_upower(self, conn, sender, path, iface, sig, params):
+        _, changed, _ = params.unpack()
+        if "OnBattery" in changed:
+            self.on_battery = bool(changed["OnBattery"])
+            log("power source:", "battery" if self.on_battery else "AC")
+            self.evaluate("power source")
+
+    def on_sleep(self, conn, sender, path, iface, sig, params):
+        going = params.unpack()[0]
+        if going:
+            self.pre_sleep = evidence("pre-suspend", desktop=self.desktop)
+            log("suspending: no pending work")
+            if self.unload_src:
+                GLib.source_remove(self.unload_src); self.unload_src = 0
+            return
+        post = evidence("resumed")
+        try:
+            pre = getattr(self, "pre_sleep", None) or {}
+            t0 = time.mktime(time.strptime(pre["time"], "%Y-%m-%dT%H:%M:%S")); t1 = time.time()
+            de = (int(pre["energy_uwh"]) - int(post["energy_uwh"])) / 1e6
+            hours = (t1 - t0) / 3600
+            log("resumed: slept %.1f min, battery %.2f Wh used -> %.2f W average while asleep" % (
+                hours * 60, de, de / hours if hours > 0 else 0))
+        except Exception:
+            log("resumed")
+        GLib.timeout_add(3000, lambda: (self.evaluate("resume"), False)[1])
+
+    def watch_steam_pid(self):
+        libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
+        fd = libc.inotify_init1(0o4000 | 0o2000000)
+        if fd < 0 or libc.inotify_add_watch(fd, STEAM_PID_DIR.encode(), 0x08 | 0x80 | 0x100) < 0:
+            log("cannot watch", STEAM_PID_DIR)
+            return
+
+        def readable(_fd, _cond):
+            try:
+                data = os.read(fd, 4096)
+            except BlockingIOError:
+                return True
+            if b"steam.pid" in data and self.desktop:
+                log("Steam (re)started")
+                self.schedule_unload(reset=True)
+            return True
+        GLib.io_add_watch(fd, GLib.PRIORITY_DEFAULT, GLib.IO_IN, readable)
+
+    def on_decky_unit(self, conn, sender, path, iface, sig, params):
+        _, changed, _ = params.unpack()
+        st = changed.get("ActiveState")
+        if st is None:
+            return
+        if st == "active" and self.decky_active not in (None, "active") and self.desktop:
+            log("Decky restarted")
+            self.schedule_unload(reset=True)
+        self.decky_active = st
+
+    # ---------------- Gaming-plugin hand-off (desktop Steam only)
+    def schedule_unload(self, reset=False):
+        if reset:
+            self.unload_tries = 0
+        if self.unload_src:
+            GLib.source_remove(self.unload_src)
+        delay = 3000 if self.unload_tries < 20 else 0
+        if self.unload_tries >= 40:          # bounded: ~2 minutes after Steam start
+            log("gaming plugins not seen in desktop Steam; giving up until next Steam/Decky start")
+            self.unload_src = 0
+            return
+        self.unload_src = GLib.timeout_add(delay or 6000, self.try_unload)
+
+    def try_unload(self):
+        self.unload_src = 0
+        if not self.desktop:
+            return False
+        self.unload_tries += 1
+        try:
+            r = cdp_eval("(async()=>{const L=window.DeckyPluginLoader; if(!L) return 'no-decky';"
+                         " const names=%s; const done=[];"
+                         " for (const n of names) if (L.hasPlugin(n)) { await L.unloadPlugin(n); done.push(n); }"
+                         " if (names.some(n=>L.hasPlugin(n))) return 'still';"
+                         " return done.length ? 'unloaded:' + done.join(',') : 'absent'})()" % json.dumps(GAMING_PLUGINS))
+        except Exception as e:
+            r = "cdp:" + type(e).__name__
+        if r and r.startswith("unloaded"):
+            log("unloaded gaming plugin frontends in desktop Steam (%s; Gaming Mode unaffected)" % r.split(":", 1)[1])
+            self.apply("after SimpleDeckyTDP hand-off")
+            # A plugin's async startup can still complete one initial apply after the unload (observed
+            # once ~35 s later). Two bounded, idempotent re-checks; they write only if a value differs.
+            for ms in (20000, 60000):
+                GLib.timeout_add(ms, lambda: (self.recheck(), False)[1])
+            return False
+        if r == "absent" and self.unload_tries > 12:
+            # Decky up but no gaming plugin appeared (not installed / disabled): nothing to hand off
+            self.apply("no gaming plugins in desktop Steam")
+            return False
+        self.schedule_unload()
+        return False
+
+    def recheck(self):
+        """bounded follow-up after a hand-off: unload any gaming plugin that loaded late, then re-apply"""
+        if not self.desktop:
+            return
+        try:
+            r = cdp_eval("(async()=>{const L=window.DeckyPluginLoader; if(!L) return '';"
+                         " const done=[]; for (const n of %s) if (L.hasPlugin(n)) { await L.unloadPlugin(n); done.push(n); }"
+                         " return done.join(',')})()" % json.dumps(GAMING_PLUGINS))
+            if r:
+                log("late hand-off: unloaded", r)
+        except Exception:
+            pass
+        self.apply("post hand-off re-check")
+
+    # ---------------- policy
+    def evaluate(self, why):
+        was = self.desktop
+        self.desktop = self.active_desktop()
+        if self.desktop != was:
+            log("mode:", "DESKTOP" if self.desktop else "not desktop (Gaming Mode / none) -> hands off", "(%s)" % why)
+            if not self.desktop and why != "start":
+                # read-only evidence of what the Gaming Mode owner (SimpleDeckyTDP) sets
+                for ms, tag in ((60000, "gaming+60s"), (300000, "gaming+5min")):
+                    GLib.timeout_add(ms, lambda tag=tag: (None if self.desktop else evidence(tag), False)[1])
+        if self.desktop:
+            self.apply(why)
+            if not was:
+                self.schedule_unload(reset=True)
+
+    def apply(self, why):
+        if not self.desktop or os.path.exists(DISABLED):
+            return
+        pol = POLICY[self.on_battery]
+        gz = gamezone_dir()
+        ok = True
+        if gz:
+            ok &= wr(os.path.join(gz, "profile"), pol["profile"])
+        else:
+            log("gamezone platform profile not available")
+        for c in sorted(os.listdir(CPU)):
+            if c.startswith("cpu") and c[3:].isdigit():
+                epp = os.path.join(CPU, c, "cpufreq", "energy_performance_preference")
+                if os.path.exists(epp):
+                    ok &= wr(epp, pol["epp"])
+                b = os.path.join(CPU, c, "cpufreq", "boost")
+                if rd(b) == "0":
+                    ok &= wr(b, "1")
+        if rd(os.path.join(CPU, "smt", "control")) == "off":
+            ok &= wr(os.path.join(CPU, "smt", "control"), "on")
+        if rd(GPU_LEVEL) not in (None, "auto"):
+            ok &= wr(GPU_LEVEL, "auto")
+        state = {"time": time.time(), "why": why, "on_battery": self.on_battery, "policy": pol, "ok": bool(ok)}
+        try:
+            with open(STATE, "w") as f:
+                json.dump(state, f)
+        except OSError:
+            pass
+        log("applied desktop policy (%s): %s, %s, EPP %s%s" % (why, "battery" if self.on_battery else "AC",
+            pol["profile"], pol["epp"], "" if ok else " WITH ERRORS"))
+
+
+def main():
+    Policy()
+    loop = GLib.MainLoop()
+    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, 15, loop.quit)
+    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, 2, loop.quit)
+    loop.run()
+
+
+if __name__ == "__main__":
+    main()
