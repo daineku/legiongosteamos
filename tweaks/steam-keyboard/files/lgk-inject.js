@@ -17,7 +17,7 @@
  */
 (function () {
   "use strict";
-  const VERSION = 40;
+  const VERSION = 41;
   const NS = "__LGK";
   const prev = window[NS];
   if (prev && prev.version === VERSION) return "lgk: already v" + VERSION;
@@ -283,19 +283,78 @@
   }
 
 
-  // ---------------------------------------------------------------- KDE layout follows the keyboard language
-  // Steam types natively only characters that exist in KDE's ACTIVE layout; everything else goes
-  // through a keymap-swap trick that Chrome and RustDesk lose (steam-for-linux#13644). lgk-helper
-  // switches KDE's active layout (us/ru) to match the on-screen keyboard's language.
-  const XKB_FOR = { russian: "ru", qwerty: "us" };
+  // ---------------------------------------------------------------- Multilingual Input Support
+  // Steam types natively only characters that exist in KDE's ACTIVE XKB layout; everything else goes
+  // through a keymap-swap trick that Chromium and X11 clients lose (steam-for-linux#13644). So for every
+  // Steam keyboard language that has an XKB equivalent, lgk-helper switches KDE's active layout to it
+  // (only if the user configured that layout in KDE; nothing is added behind the user's back).
+  //   kind "xkb":    synced to the XKB layout/variant below
+  //   kind "native": Steam handles the language itself (IBus input methods for CJK, Vietnamese); no sync,
+  //                  KDE stays on the user's own layout and Steam's native path is untouched
+  //   grid "ansi":   Steam's key grid verified to match the XKB layout key for key (enables physical
+  //                  long-press symbols); other layouts keep Steam's own long-press popup behaviour
+  const LAYOUTS = {
+    qwerty: { xkb: "us", grid: "ansi" }, qwerty_int: { xkb: "us", variant: "intl" },
+    dvorak: { xkb: "us", variant: "dvorak" }, colemak: { xkb: "us", variant: "colemak" },
+    russian: { xkb: "ru", grid: "ansi" }, ukrainian: { xkb: "ua" }, bulgarian: { xkb: "bg" },
+    bulgarian_phonetic_traditional: { xkb: "bg", variant: "phonetic" },
+    czech: { xkb: "cz" }, danish: { xkb: "dk" }, finnish: { xkb: "fi" }, french: { xkb: "fr" },
+    german: { xkb: "de" }, greek: { xkb: "gr" }, hungarian: { xkb: "hu" }, italian: { xkb: "it" },
+    norwegian: { xkb: "no" }, polish: { xkb: "pl" }, portuguese: { xkb: "pt" }, romanian: { xkb: "ro" },
+    spanish: { xkb: "es" }, swedish: { xkb: "se" }, turkish_q: { xkb: "tr" }, turkish_f: { xkb: "tr", variant: "f" },
+  };
+  // Steam's numeric layout ids (keyboard settings store) -> layout names, from Steam's own layout table
+  const LAYOUT_IDS = ["qwerty", "bulgarian", "schinese", "tchinese", "czech", "danish", "finnish", "french", "german",
+    "greek", "hungarian", "italian", "japanese", "korean", "norwegian", "polish", "portuguese", "romanian", "russian",
+    "spanish", "swedish", null, "turkish_f", "turkish_q", "ukrainian", "vietnamese", "qwerty_int", "dvorak", "colemak",
+    "bulgarian_phonetic_traditional", null, "tchinese_bopomofo", "tchinese_cangjie", "japanese_kana", "tchinese_quick"];
+  const layoutInfo = (name) => {
+    const e = LAYOUTS[name];
+    return e ? { steam: name, kind: "xkb", xkb: e.xkb, variant: e.variant || "", grid: e.grid || "" }
+             : { steam: name, kind: "native", xkb: null, variant: "", grid: "" };
+  };
+  L.kdeLayout = null;      // set by lgk-helper: the XKB layout KDE is synced to, or null when not synced
+
+  // The user's enabled Steam keyboard languages, from Steam's keyboard settings store (found by content,
+  // not by the hashed module id). Read-only; null if this Steam build stores them differently.
+  function steamLayoutSettings() {
+    try {
+      if (L.layoutStore === undefined) {
+        L.layoutStore = null;
+        let req = null;
+        window.webpackChunksteamui.push([[Symbol("lgk")], {}, (r) => { req = r; }]);
+        for (const id of Object.keys((req && req.m) || {})) {
+          if (!String(req.m[id]).includes("GetKeyboardLayoutSettings")) continue;
+          const ex = req(id);
+          for (const k in ex) {
+            const v = ex[k];
+            if (v && typeof v.GetKeyboardLayoutSettings === "function") { L.layoutStore = v; break; }
+          }
+          if (L.layoutStore) break;
+        }
+      }
+      return L.layoutStore ? L.layoutStore.GetKeyboardLayoutSettings() : null;
+    } catch (e) { return null; }
+  }
+  function reportLayouts() {
+    const st = steamLayoutSettings();
+    if (!st || !Array.isArray(st.selectedLayouts)) { L.unsupported.push("keyboard language list"); return; }
+    L.enabledLayouts = st.selectedLayouts.map((id) => LAYOUT_IDS[id] || "layout#" + id).map(layoutInfo);
+    notify("layouts", { enabled: L.enabledLayouts });
+  }
+
   function syncLang(inst) {
     const sl = inst.state && inst.state.standardLayout;
     if (!sl) return;
-    const xkb = XKB_FOR[sl.name] || "us";
-    if (xkb !== L.xkb) { const user = L.xkb !== null; L.xkb = xkb; notify("lang", { xkb, user }); }
+    const info = layoutInfo(sl.name);
+    const key = info.kind + ":" + info.xkb + ":" + info.variant;
+    if (key !== L.langKey) {
+      const user = L.langKey !== null;
+      L.langKey = key;
+      L.kdeLayout = null;                          // until the helper confirms the switch
+      notify("lang", { xkb: info.xkb, variant: info.variant, steam: info.steam, user });
+    }
   }
-
-
 
   // Physical key by grid position (Steam leaves data-keycode=0 on some layouts, e.g. Russian digits).
   // Both Steam layouts in use follow the standard ANSI grid row for row, as do the XKB us/ru layouts.
@@ -312,7 +371,10 @@
 
   function chordSecondary(inst, k) {
     const sl = inst.state && inst.state.standardLayout;
-    if (!sl || !XKB_FOR[sl.name] || XKB_FOR[sl.name] !== L.xkb) return false;   // layouts not in sync
+    if (!sl) return false;
+    const info = layoutInfo(sl.name);
+    // only on grid-verified layouts, and only once KDE is confirmed on the matching XKB layout
+    if (info.grid !== "ansi" || !info.xkb || L.kdeLayout !== info.xkb) return false;
     // grid position first: Steam's data-keycode is 0 or wrong on some Russian keys ("." carries 43)
     // Steam's ControllerKeyboardSetKeyState is not physical (it resolves a US keysym in the ACTIVE
     // layout), so the chord goes through lgk-helper's uinput device: real evdev key + real Shift.
@@ -704,7 +766,8 @@
     if (!inst.props || !inst.props.bStandalone) return true; // not the desktop standalone keyboard
     L.popup = popup;
     L.inst = inst;
-    L.xkb = null;                                  // report the language on the first update
+    L.langKey = null;                              // report the language on the first update
+    L.kdeLayout = null;
     L.pos = L.openPos || "bottom";                // set by L.open(); manual opens start at the bottom
     L.openPos = null;
     L.hideRequested = false;
@@ -716,6 +779,7 @@
     installPadInput();
     installTabKey(inst);
     patchLayout(inst);
+    reportLayouts();
     syncLang(inst);
     L.cleanups.push(releaseMods);
     try { inst.forceUpdate(); } catch (e) {} // re-render so VKMove secondary disappears

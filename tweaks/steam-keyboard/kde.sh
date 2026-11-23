@@ -38,18 +38,28 @@ kde_remove_kwin_rule() {   # kde_remove_kwin_rule GROUP
     lg_log "kwin rule $g removed"
 }
 
-kde_add_layout() {   # kde_add_layout CODE   (optional: Russian typing through KDE's own layout)
-    local code="$1" list variants new
+kde_add_layout() {   # kde_add_layout CODE... (XKB layout codes, optionally "code(variant)"; restored on uninstall)
+    local list variants new nvar code lay var added=""
+    [ -z "$(lg_state_get layout_after)" ] || { lg_info "layouts were already added by this tweak"; return 0; }
     list=$(kreadconfig6 --file kxkbrc --group Layout --key LayoutList)
-    if printf '%s' "$list" | tr ',' '\n' | grep -qx "$code"; then lg_info "layout $code already configured"; return 0; fi
     variants=$(kreadconfig6 --file kxkbrc --group Layout --key VariantList)
+    new="${list:-us}"; nvar="$variants"
+    [ -n "$list" ] || nvar=""
+    for code in "$@"; do
+        [[ "$code" =~ ^[a-z]{2,3}(\([a-z0-9_]+\))?$ ]] || lg_die "invalid layout '$code' (use XKB codes such as de, fr, ua or us(intl))"
+        lay=${code%%(*}; var=""; [ "$lay" != "$code" ] && { var=${code#*(}; var=${var%)}; }
+        if paste -d'|' <(printf '%s' "$new" | tr ',' '\n') <(printf '%s' "$nvar" | tr ',' '\n') | grep -qx "$lay|$var"; then
+            lg_info "layout $code already configured"; continue
+        fi
+        new="$new,$lay"; nvar="$nvar,$var"; added="$added $code"
+    done
+    [ -n "$added" ] || return 0
     lg_state_set layout_before "$list"
     lg_state_set variants_before "$variants"
     lg_state_set use_before "$(kreadconfig6 --file kxkbrc --group Layout --key Use)"
-    new="${list:-us},$code"
     lg_state_set layout_after "$new"
     kwriteconfig6 --file kxkbrc --group Layout --key Use true
-    kwriteconfig6 --file kxkbrc --group Layout --key VariantList "${variants},"
+    kwriteconfig6 --file kxkbrc --group Layout --key VariantList "$nvar"
     kwriteconfig6 --notify --file kxkbrc --group Layout --key LayoutList "$new"
     lg_ok "KDE layouts: $new"
 }

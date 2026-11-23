@@ -47,6 +47,8 @@ DISABLE_FLAG = os.path.expanduser("~/.config/legiongo-steamos/steam-keyboard/lgk
 AUTOOPEN_OFF_FLAG = os.path.expanduser("~/.config/legiongo-steamos/steam-keyboard/lgk-autoopen-off")
 CDP = ("127.0.0.1", 8080)
 RUNTIME_STATE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "lgk-helper.state")  # for --cleanup
+# Multilingual Input Support: last seen Steam keyboard languages and their KDE/XKB status (read by `legiongo.sh status`)
+LANG_STATUS = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "lgk-languages.json")
 STEAM_DIR = os.path.expanduser("~/.steam")
 DEBUG = "--debug" in sys.argv
 
@@ -488,6 +490,7 @@ class Helper:
         log("auto-open", "on" if self.autoopen else "off (accessibility not used)")
         self.win = None               # active window client geometry (x, y, w, h) from lgk-kwin.js
         self.active_class = ""        # active window resource class (e.g. "rustdesk")
+        self.home_layout = None       # KDE layout index active before the keyboard synced its language
         self.caret = None             # caret/field rect of the focused field, window coordinates
         self.own_bus_name()
         self.write_state()                # before loading: a crash must never orphan the KWin script
@@ -617,8 +620,16 @@ class Helper:
                 for m in reversed(mods):
                     self.bridge.mouse.key(m, False)
             return
+        if kind == "layouts":               # Steam keyboard languages the user enabled (compatibility report)
+            self.report_languages(ev.get("enabled") or [])
+            return
         if kind == "lang":
-            self.set_kde_layout(str(ev.get("xkb", "us")))
+            # remember the user's own KDE layout when the keyboard starts syncing, restore it on hide/exit
+            if self.home_layout is None:
+                self.home_layout = self.current_kde_layout()
+            xkb = ev.get("xkb")
+            ok = self.set_kde_layout(str(xkb), str(ev.get("variant") or "")) if xkb else self.restore_home_layout(keep=True)
+            self.send_js("window.__LGK && (__LGK.kdeLayout = %s)" % json.dumps(xkb if (xkb and ok) else None))
             # the user tapped the language key while RustDesk is in front: switch the remote's input
             # language too (Windows Alt+Shift). Typed text itself is exact in Translate mode anyway.
             if ev.get("user") and self.active_class == "rustdesk" and self.bridge.mouse:
@@ -627,7 +638,7 @@ class Helper:
                 dbg("sent Alt+Shift to RustDesk")
             return
         if kind == "hidden":
-            self.set_kde_layout("us")
+            self.restore_home_layout()
         if kind == "shown":
             self.pending_open = False
             self.set_state(VISIBLE_TOP if ev.get("pos") == "top" else VISIBLE_BOTTOM, "(shown)")
@@ -750,22 +761,83 @@ class Helper:
 
 
     # ---------------- KDE active layout (follows the on-screen keyboard language)
-    def set_kde_layout(self, code):
+    # ---------------- Multilingual Input Support: KDE/XKB layout follows the Steam keyboard language
+    def kde_layouts(self):
+        """[(layout, variant), ...] as configured in KDE, or None if KDE's keyboard service is unavailable."""
         try:
             v = self.bus.call_sync("org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts", "getLayoutsList",
                                    None, GLib.VariantType("(a(sss))"), Gio.DBusCallFlags.NONE, 1000, None)
-            codes = [l[0] for l in v.unpack()[0]]
-            if code not in codes:
-                return
-            cur = self.bus.call_sync("org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts", "getLayout",
-                                     None, GLib.VariantType("(u)"), Gio.DBusCallFlags.NONE, 1000, None).unpack()[0]
-            idx = codes.index(code)
-            if cur != idx:
+            return [(l[0], l[1]) for l in v.unpack()[0]]
+        except GLib.Error as e:
+            dbg("KDE layouts:", e.message)
+            return None
+
+    def current_kde_layout(self):
+        try:
+            return self.bus.call_sync("org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts", "getLayout",
+                                      None, GLib.VariantType("(u)"), Gio.DBusCallFlags.NONE, 1000, None).unpack()[0]
+        except GLib.Error:
+            return None
+
+    @staticmethod
+    def match_layout(layouts, code, variant=""):
+        """Index of the KDE layout for XKB layout `code` + `variant` (exact variant match; "" = base layout)."""
+        for i, (c, v) in enumerate(layouts or []):
+            if c == code and (v or "") == (variant or ""):
+                return i
+        return None
+
+    def set_kde_layout_index(self, idx):
+        try:
+            if self.current_kde_layout() != idx:
                 self.bus.call_sync("org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts", "setLayout",
                                    GLib.Variant("(u)", (idx,)), None, Gio.DBusCallFlags.NONE, 1000, None)
-                dbg("KDE layout ->", code)
+            return True
         except GLib.Error as e:
             dbg("KDE layout:", e.message)
+            return False
+
+    def set_kde_layout(self, code, variant=""):
+        """Switch KDE to the layout matching the Steam keyboard language. False if it is not configured in KDE
+        (then nothing changes and the Steam keyboard keeps its own text path for that language)."""
+        idx = self.match_layout(self.kde_layouts(), code, variant)
+        if idx is None:
+            dbg("KDE layout %s%s not configured" % (code, "(%s)" % variant if variant else ""))
+            return False
+        ok = self.set_kde_layout_index(idx)
+        if ok:
+            dbg("KDE layout ->", code, variant)
+        return ok
+
+    def restore_home_layout(self, keep=False):
+        """Back to the KDE layout that was active before the keyboard started syncing."""
+        if self.home_layout is not None:
+            self.set_kde_layout_index(self.home_layout)
+            if not keep:
+                self.home_layout = None
+        return True
+
+    def report_languages(self, enabled):
+        layouts = self.kde_layouts() or []
+        out = []
+        for e in enabled:
+            if not isinstance(e, dict):
+                continue
+            kind, xkb, var = e.get("kind"), e.get("xkb"), e.get("variant") or ""
+            if kind == "xkb":
+                st = "synced" if self.match_layout(layouts, xkb, var) is not None else "kde-layout-missing"
+            else:
+                st = "steam-native"          # IME / languages Steam handles itself; no XKB layout involved
+            out.append({"steam": e.get("steam"), "kind": kind, "xkb": xkb, "variant": var, "status": st})
+            if st == "kde-layout-missing":
+                log("Steam keyboard language %s: add the KDE layout '%s%s' for reliable input "
+                    "(System Settings > Keyboard > Layouts)" % (e.get("steam"), xkb, "(%s)" % var if var else ""))
+        try:
+            with open(LANG_STATUS + ".tmp", "w") as f:
+                json.dump({"languages": out, "kde_layouts": ["%s%s" % (c, "(%s)" % v if v else "") for c, v in layouts]}, f)
+            os.replace(LANG_STATUS + ".tmp", LANG_STATUS)
+        except OSError:
+            pass
 
     # ---------------- AT-SPI
     def a11y_enabled(self, value):
@@ -792,7 +864,7 @@ class Helper:
             pass
 
     def shutdown(self):
-        self.set_kde_layout("us")
+        self.restore_home_layout()
         self.kwin_scripting("unloadScript", (self.KWIN_NAME,), "(s)")
         self.bridge.shutdown()
         if self.a11y_was_enabled is False:
