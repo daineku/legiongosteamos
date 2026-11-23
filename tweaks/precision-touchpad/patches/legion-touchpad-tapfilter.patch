@@ -1,0 +1,209 @@
+--- a/src/drivers/legion_go/mod.rs
++++ b/src/drivers/legion_go/mod.rs
+@@ -51,9 +51,18 @@
+ const DRAG_TIMEOUT_DINPUT: Duration = Duration::from_millis(100);
+ const DRAG_TIMEOUT_XINPUT: Duration = Duration::from_millis(150);
+ const RELEASE_TIMEOUT_DINPUT: Duration = Duration::from_millis(300);
+-const RELEASE_TIMEOUT_XINPUT: Duration = Duration::from_millis(165);
++// legion-desktop-build: measured user taps last 170-235 ms (touchpad-ux/tap-to-click-investigation.md);
++// 165 ms rejected them all. 300 ms = upstream DINPUT value. Movement gate (TAP_MAX_DISTANCE_SQ) unchanged.
++const RELEASE_TIMEOUT_XINPUT: Duration = Duration::from_millis(300);
+ const RELEASE_CONFIRM: Duration = Duration::from_millis(20);
+ const TAP_MAX_DISTANCE_SQ: i64 = 40 * 40;
++// legion-desktop-build phase 2 (tap precision): lift-off filter. Measured on this unit
++// (phase-2-tap-precision/captures/taps-baseline2): 70 % of a tap's finger travel happens in the last
++// 20 ms before lift-off (finger roll-off). Slow frames are held for LIFT_FILTER_DELAY and dropped if the
++// finger lifts meanwhile; a frame step >= sqrt(LIFT_FILTER_BYPASS_SQ) raw units is deliberate motion and
++// flushes the queue (forwarded live). Bypassed while a click/drag is active.
++const LIFT_FILTER_DELAY: Duration = Duration::from_millis(24);
++const LIFT_FILTER_BYPASS_SQ: i64 = 20 * 20;
+ 
+ // Report ID's
+ pub const TOUCHPAD_DATA: u8 = 0x01;
+--- a/src/drivers/legion_go/go_touchpad_driver.rs
++++ b/src/drivers/legion_go/go_touchpad_driver.rs
+@@ -13,7 +13,8 @@
+     },
+     hid_report::TouchpadDataReport,
+     DRAG_TIMEOUT_DINPUT, DRAG_TIMEOUT_XINPUT, GO_TOUCHPAD_D_PIDS, GO_TOUCHPAD_X_PIDS,
+-    PAD_FORCE_NORMAL, RELEASE_CONFIRM, RELEASE_TIMEOUT_DINPUT, RELEASE_TIMEOUT_XINPUT,
++    LIFT_FILTER_BYPASS_SQ, LIFT_FILTER_DELAY,
++    PAD_FORCE_NORMAL, PAD_X_MAX, PAD_Y_MAX, RELEASE_CONFIRM, RELEASE_TIMEOUT_DINPUT, RELEASE_TIMEOUT_XINPUT,
+     TAP_MAX_DISTANCE_SQ, TIMEOUT, TOUCHPAD_DATA, TOUCHPAD_PACKET_SIZE, TP_IID, VID,
+ };
+ 
+@@ -44,6 +45,12 @@
+     release_delay: Duration,
+     /// Configures the tap to drag timeout for an idle pad.
+     drag_timeout: Duration,
++    /// lift-off filter: frames not forwarded yet (time received, x, y)
++    pending: std::collections::VecDeque<(Instant, u16, u16)>,
++    /// last position actually forwarded during the current touch
++    sent_pos: [u16; 2],
++    /// previous raw frame position during the current touch
++    last_raw: [u16; 2],
+ }
+ 
+ impl Driver {
+@@ -84,6 +91,9 @@
+             is_dinput,
+             release_delay,
+             drag_timeout,
++            pending: Default::default(),
++            sent_pos: Default::default(),
++            last_raw: Default::default(),
+         })
+     }
+ 
+@@ -114,6 +124,8 @@
+             {
+                 return Ok(self.translate_touch(false));
+             }
++            // Lift-off filter: silence usually means the finger is leaving. Keep held frames until
++            // the lift is confirmed (then they are dropped) or reports resume (then released on time).
+             return Ok(Vec::new());
+         }
+ 
+@@ -146,10 +158,29 @@
+                 if self.is_touching {
+                     self.last_touch = Instant::now();
+                 }
+-                return Ok(Vec::new());
++                return Ok(self.flush_due());
+             }
+         }
+ 
++        // The HID descriptor declares X/Y logical maximum 1024 (0x0400). When a finger leaves the
++        // sensing area the controller can emit one frame that still has tip_switch/contact_count set
++        // but carries out-of-range coordinates (seen as the virtual pad jumping to the saturated
++        // bottom-right corner right before lift-off, which teleports the cursor). Such a frame
++        // carries no valid position: keep the touch alive but do not update the position.
++        if input_report.tip_switch_0
++            && (input_report.touch_x_0 as f64 > PAD_X_MAX || input_report.touch_y_0 as f64 > PAD_Y_MAX)
++        {
++            log::debug!(
++                "Ignoring touchpad frame with out-of-range position x={} y={}",
++                input_report.touch_x_0,
++                input_report.touch_y_0
++            );
++            if self.is_touching {
++                self.last_touch = Instant::now();
++            }
++            return Ok(Vec::new());
++        }
++
+         self.touchpad_state = Some(input_report);
+         Ok(self.translate_touch(true))
+     }
+@@ -176,6 +207,9 @@
+                 self.touch_started = true;
+                 self.first_touch = Instant::now();
+                 self.first_touch_pos = [state.touch_x_0, state.touch_y_0];
++                self.pending.clear();
++                self.sent_pos = [state.touch_x_0, state.touch_y_0];
++                self.last_raw = [state.touch_x_0, state.touch_y_0];
+                 // A second finger while a click is held ends that click so it stays short.
+                 if self.is_clicked {
+                     self.is_continuation = true;
+@@ -187,15 +221,22 @@
+                 self.start_click(&mut events);
+             }
+             self.last_touch = Instant::now();
+-            self.emit(&mut events, self.touch_event(state));
++            self.forward_touch(&mut events, state);
+             return events;
+         }
+ 
+         if self.touch_started {
+             self.touch_started = false;
++            // Lift-off filter: frames still held are the finger rolling off the pad; drop them and close
++            // the touch at the last forwarded position so the cursor stays where the user aimed.
++            if !self.pending.is_empty() {
++                log::trace!("lift filter: dropped {} roll-off frames", self.pending.len());
++                self.pending.clear();
++            }
+             // Close this touch at its last position so the target opens a fresh
+             // tracking id for the next touch.
+-            self.emit(&mut events, self.touch_event(state));
++            let sent = self.sent_pos;
++            self.emit(&mut events, self.touch_event_at(sent[0], sent[1]));
+ 
+             // A continuation that moved is a drag to release; one that stayed put is another click.
+             if self.is_continuation {
+@@ -229,7 +270,8 @@
+ 
+         if self.is_clicked {
+             if self.last_touch.elapsed() < self.drag_timeout {
+-                self.emit(&mut events, self.touch_event(state));
++                let sent = self.sent_pos;
++                self.emit(&mut events, self.touch_event_at(sent[0], sent[1]));
+             } else {
+                 self.release_click(&mut events);
+             }
+@@ -238,6 +280,49 @@
+         events
+     }
+ 
++    /// Forward the current touch position through the lift-off filter.
++    fn forward_touch(&mut self, events: &mut Vec<Event>, state: TouchpadDataReport) {
++        let pos = [state.touch_x_0, state.touch_y_0];
++        let dx = pos[0] as i64 - self.last_raw[0] as i64;
++        let dy = pos[1] as i64 - self.last_raw[1] as i64;
++        self.last_raw = pos;
++        // Drags and tap-and-drag continuations, the touch-down frame, and fast deliberate motion go out live.
++        let live = self.is_clicked
++            || self.is_continuation
++            || (pos == self.first_touch_pos && self.pending.is_empty())
++            || dx * dx + dy * dy >= LIFT_FILTER_BYPASS_SQ;
++        if live {
++            self.pending.clear();
++            self.sent_pos = pos;
++            self.emit(events, self.touch_event(state));
++            return;
++        }
++        self.pending.push_back((Instant::now(), pos[0], pos[1]));
++        self.release_due(events);
++    }
++
++    /// Forward held frames that are older than the lift-off filter delay.
++    fn release_due(&mut self, events: &mut Vec<Event>) {
++        while let Some(&(t, x, y)) = self.pending.front() {
++            if t.elapsed() < LIFT_FILTER_DELAY {
++                break;
++            }
++            self.pending.pop_front();
++            self.sent_pos = [x, y];
++            let ev = self.touch_event_at(x, y);
++            self.emit(events, ev);
++        }
++    }
++
++    /// Called from poll() when no new position arrived: keep releasing held frames on time.
++    fn flush_due(&mut self) -> Vec<Event> {
++        let mut events = Vec::new();
++        if self.touch_started && self.is_touching && !self.pending.is_empty() {
++            self.release_due(&mut events);
++        }
++        events
++    }
++
+     /// Start a click event
+     fn start_click(&mut self, events: &mut Vec<Event>) {
+         if self.is_clicked {
+@@ -285,6 +370,16 @@
+         valid
+     }
+ 
++    /// Generate a touch event at an explicit position (used by the lift-off filter)
++    fn touch_event_at(&self, x: u16, y: u16) -> Event {
++        Event::Axis(AxisEvent::Touchpad(TouchAxisInput {
++            index: 0,
++            is_touching: self.is_touching,
++            x,
++            y,
++        }))
++    }
++
+     /// Generate a touch event from the device state
+     fn touch_event(&self, state: TouchpadDataReport) -> Event {
+         Event::Axis(AxisEvent::Touchpad(TouchAxisInput {
