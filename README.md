@@ -12,6 +12,8 @@
   <a href="docs/COMPATIBILITY.md"><img alt="Compatibility guide" src="https://img.shields.io/badge/compatibility-guide-3daee9"></a>
 </p>
 
+**Official SteamOS, enhanced.** Lightweight, reversible improvements to Valve's native keyboard, Legion Go input and controllers, and compatible handheld power management — without replacing SteamOS or adding unnecessary system load.
+
 ## Install — choose your device
 
 Open a device guide, choose a tweak, then press GitHub's **Copy** button on its ready-to-paste terminal command. **No placeholders, no editing, and no manual tweak-name replacement.** Commands install one module at a time, pinned to the reviewed **v0.2.3 stable release**.
@@ -20,6 +22,12 @@ Open a device guide, choose a tweak, then press GitHub's **Copy** button on its 
 |---|---|---|
 | **Lenovo Legion Go (1st gen)** | **[Browse all 7 ready-to-copy installers](docs/INSTALL_LEGION_GO.md)** | Reference Verified on SteamOS 3.9.5; some optional functions have limitations |
 | **Steam Deck LCD / OLED** | **[Browse 4 portable software installers](docs/INSTALL_STEAM_DECK.md)** | Capability-based only; **not yet physically verified on Steam Deck**. Legion Go hardware tweaks are excluded |
+
+**Jump directly to a copy-ready installer — no searching or scrolling:**
+
+**Legion Go:** [Keyboard](docs/INSTALL_LEGION_GO.md#steam-keyboard) · [Precision touchpad](docs/INSTALL_LEGION_GO.md#precision-touchpad) · [Touchpad without Steam](docs/INSTALL_LEGION_GO.md#desktop-touchpad) · [Power / CPU boost](docs/INSTALL_LEGION_GO.md#desktop-power-policy) · [Microphone](docs/INSTALL_LEGION_GO.md#mic-enhance) · [Decky](docs/INSTALL_LEGION_GO.md#decky-loader) · [Gaming plugins](docs/INSTALL_LEGION_GO.md#decky-power-plugins)
+
+**Steam Deck:** [Keyboard](docs/INSTALL_STEAM_DECK.md#steam-keyboard) · [Decky](docs/INSTALL_STEAM_DECK.md#decky-loader) · [Power / CPU boost](docs/INSTALL_STEAM_DECK.md#desktop-power-policy) · [Microphone](docs/INSTALL_STEAM_DECK.md#mic-enhance) *(capability-based, not yet tested on Steam Deck)*
 
 **Quick install: native Steam keyboard** (for compatible SteamOS Desktop Mode devices):
 
