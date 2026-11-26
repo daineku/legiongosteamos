@@ -56,8 +56,8 @@ You get Legion Go-specific power and controller controls in Gaming Mode without 
 ## Installation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.4
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" install decky-power-plugins
 ```
 
@@ -70,8 +70,8 @@ In Gaming Mode: Quick Access (…) → plug icon → SimpleDeckyTDP and LegionGo
 ## Uninstallation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.4
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" uninstall decky-power-plugins
 ```
 

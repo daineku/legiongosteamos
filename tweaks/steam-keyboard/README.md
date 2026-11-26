@@ -92,8 +92,8 @@ The keyboard script depends on Steam client internals. Each hook is checked when
 ## Installation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.4
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" install steam-keyboard
 ```
 
@@ -110,13 +110,13 @@ If Steam's local debugger is not enabled yet, the installer asks before enabling
 2. In Chrome, type in a form field and press Tab. The next field gets focus.
 3. Tap 🌐 and type. Hide the keyboard: your KDE layout is back.
 4. On the Legion Go: move both sticks. Two cursors move; LT and R3 press keys.
-5. `~/.local/share/legiongo-steamos/v0.2.3/legiongo.sh status steam-keyboard` shows "working: yes", and each enabled Steam language as *synced*, *needs a KDE layout*, or *handled by Steam* (input methods).
+5. `~/.local/share/legiongo-steamos/v0.2.4/legiongo.sh status steam-keyboard` shows "working: yes", and each enabled Steam language as *synced*, *needs a KDE layout*, or *handled by Steam* (input methods).
 
 ## Uninstallation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.4
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" uninstall steam-keyboard
 ```
 

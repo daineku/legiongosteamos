@@ -34,6 +34,7 @@ Device-level states printed by `check`:
 | steam-keyboard | portable: Steam + KDE + debugger; input profile detection | Reference Verified | compatible by capability, untested (dual-trackpad typing stays Steam's own) | compatible by capability, untested (dual-joystick bridge only with an InputPlumber virtual Deck controller) |
 | mic-enhance | capability: one internal analog mic node, filter-chain, CAPS | Reference Verified | compatible by capability, untested (EQ tuned for the Legion Go mic) | same |
 | desktop-power-policy | capability: EPP (amd-pstate / intel_pstate), CPU boost (per-policy or global cpufreq `boost`, Intel `intel_pstate/no_turbo`) and/or Lenovo firmware profiles | Reference Verified | compatible by capability, untested (no Lenovo profiles; EPP/boost only if present) | same |
+| smart-auto-brightness | capability: light sensor (iio-sensor-proxy), Plasma brightness API, KWin automatic brightness | Experimental | compatible by capability, untested | same |
 | decky-loader | portable | Reference Verified | compatible, untested by us (Decky's own primary platform) | compatible, untested |
 | precision-touchpad | Legion Go DMI + InputPlumber features | Reference Verified | not applicable | not applicable |
 | desktop-touchpad | Legion Go DMI | Reference Verified | not applicable (the Deck's trackpads are not managed this way) | not applicable |

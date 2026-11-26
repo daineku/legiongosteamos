@@ -15,6 +15,7 @@ All numbers were measured on the reference device: Lenovo Legion Go 83E1, SteamO
 | desktop-power-policy | `legion-power-policy.py` (python3, GLib, D-Bus signals) | root service, always | writes only in Desktop Mode | 0.00 % | 0.00 | 39 MB | adds; event-driven, no polling |
 | mic-enhance | PipeWire `filter-chain` (existing SteamOS user service) | always | both | 0.00 % (mic idle) | 0.00 | 11 MB | uses an existing service |
 | precision-touchpad | `inputplumber` 0.84 (glide) | always | both | 6.1–6.7 % | ≈ 2,040–2,250 | 24 MB after start (55 MB after 5 days) | **replaces** stock InputPlumber (stock: 3.1 %, 1,506/s, 21 MB) |
+| smart-auto-brightness | `legiongo-auto-brightness.py` (python3, GLib) | Desktop session | Desktop only | 0.00 % | 0.55 (sensor signals + one 15 s timer) | 30 MB | replaces KWin's automatic brightness (one controller); iio-sensor-proxy 0.03 % CPU either way |
 | decky-loader | `PluginLoader` (5 processes) | root service, always | both | 0.00 % | — | 111 MB | adds (Decky's own design) |
 | decky-power-plugins | Python back-ends inside Decky | with Decky | Gaming Mode use | included above | — | included above | adds |
 

@@ -41,8 +41,8 @@ Legion Go (1st gen), SteamOS 3.9.5: Reference Verified. The owner checked Steam 
 ## Installation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.4
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" install desktop-touchpad
 ```
 
@@ -53,8 +53,8 @@ Exit Steam (Steam menu → Exit). After about 2 seconds the touchpad moves the c
 ## Uninstallation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.4
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" uninstall desktop-touchpad
 ```
 

@@ -63,20 +63,20 @@ This is one device and one workload, not a battery-life promise.
 ## Installation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.4
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" install desktop-power-policy
 ```
 
 ## Verification
 
-`~/.local/share/legiongo-steamos/v0.2.3/legiongo.sh status desktop-power-policy` shows the firmware profile and EPP. `journalctl -u legion-power-policy -n 3` shows lines like `applied desktop policy (...): battery, balanced`. Pause the policy with `sudo touch /etc/legion-power/disabled`.
+`~/.local/share/legiongo-steamos/v0.2.4/legiongo.sh status desktop-power-policy` shows the firmware profile and EPP. `journalctl -u legion-power-policy -n 3` shows lines like `applied desktop policy (...): battery, balanced`. Pause the policy with `sudo touch /etc/legion-power/disabled`.
 
 ## Uninstallation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.4
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" uninstall desktop-power-policy
 ```
 

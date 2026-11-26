@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.2.4 — 2026-11-26
+## 0.2.4 — 2026-11-27
+
+- New tweak `smart-auto-brightness` 1.0.0 (Experimental). KWin's built-in automatic brightness maps lux to an absolute brightness after a 2 s timer, so a hand over the Legion Go's sensor dimmed the screen from 100 % to about 33 %. The new controller replaces it:
+  - it stays within ±10 % of the brightness you set, and any manual change is the new baseline;
+  - it ignores shadows (90th-percentile light over 30 s, two agreeing evaluations);
+  - it ramps softly and restores KWin's setting on uninstall.
+- Docs and install lines pinned to `v0.2.4`.
 
 - `steam-keyboard` 44.0.0:
   - **Fix: the touchpad no longer highlights G.** Steam's focus navigation treated touchpad touches as controller input and showed its focus ring on the keyboard's default key, where a controller A press could also type. Touchpad buttons are now swallowed at Steam's own catch-all input hook while the keyboard is open on dual-joystick devices. That capability is sent at injection time, so there is no race when the keyboard opens.

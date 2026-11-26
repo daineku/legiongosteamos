@@ -1,6 +1,6 @@
 # Install on Lenovo Legion Go (1st gen)
 
-**Reference Verified · SteamOS 3.9.5 reference system · stable package v0.2.3**
+**Reference Verified · SteamOS 3.9.5 reference system · package v0.2.4**
 
 Open **Konsole** in SteamOS Desktop Mode. Select the improvement below, click its link, press GitHub's **Copy** icon on the `bash` command block and paste into Konsole. **No placeholders, editing, name replacement or manual version changes.** Each command installs just one tweak (required dependencies are explained before installation).
 
@@ -13,6 +13,7 @@ Open **Konsole** in SteamOS Desktop Mode. Select the improvement below, click it
 | [**Desktop touchpad handover**](#desktop-touchpad) | Keep the touchpad usable in KDE Desktop Mode when the Steam client closes. |
 | [**Desktop power policy / CPU boost**](#desktop-power-policy) | Keep desktop CPU boost available and apply capability-aware EPP/power behavior without changing Gaming Mode's ownership of power controls. |
 | [**Enhanced microphone**](#mic-enhance) | Add the reference Legion Go's PipeWire mic processing for clearer, less clipped voice input. |
+| [**Smart auto brightness**](#smart-auto-brightness) | Experimental: adaptive brightness limited to ±10 % of your setting, ignoring hand shadows over the sensor. |
 | [**Decky Loader**](#decky-loader) | Install the checksum-pinned Decky plugin loader used for Gaming Mode extensions. |
 | [**Gaming Mode power plugins**](#decky-power-plugins) | Add SimpleDeckyTDP and patched LegionGoRemapper with conservative initial settings. |
 
@@ -27,14 +28,14 @@ Portable keyboard enhancements; on Legion Go the left and right sticks control t
 **Install — copy this entire command:**
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
 ```
 
 <details>
 <summary>Uninstall steam-keyboard — ready-to-copy command</summary>
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall steam-keyboard
 ```
 
 </details>
@@ -48,14 +49,14 @@ d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detache
 **Install — copy this entire command:**
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install precision-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install precision-touchpad
 ```
 
 <details>
 <summary>Uninstall precision-touchpad — ready-to-copy command</summary>
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall precision-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall precision-touchpad
 ```
 
 </details>
@@ -63,7 +64,7 @@ d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detache
 **Optional: favor tap precision instead of the default glide feel** (`tapfilter` variant; measured 36% → 7% of taps moving ≥5 px on the reference device):
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && LG_IP_VARIANT=tapfilter "$d/legiongo.sh" install precision-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && LG_IP_VARIANT=tapfilter "$d/legiongo.sh" install precision-touchpad
 ```
 
 Choose one variant, not both. The reference device uses `glide` by default. Read [trade-offs](../tweaks/precision-touchpad/README.md) before switching.
@@ -77,14 +78,14 @@ Depends on a compatible InputPlumber touchpad target. If that feature is missing
 **Install — copy this entire command:**
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install desktop-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install desktop-touchpad
 ```
 
 <details>
 <summary>Uninstall desktop-touchpad — ready-to-copy command</summary>
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall desktop-touchpad
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall desktop-touchpad
 ```
 
 </details>
@@ -98,14 +99,14 @@ d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detache
 **Install — copy this entire command:**
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install desktop-power-policy
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install desktop-power-policy
 ```
 
 <details>
 <summary>Uninstall desktop-power-policy — ready-to-copy command</summary>
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall desktop-power-policy
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall desktop-power-policy
 ```
 
 </details>
@@ -119,14 +120,35 @@ Tuned for the Legion Go internal microphone. Uses the existing PipeWire filter-c
 **Install — copy this entire command:**
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install mic-enhance
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install mic-enhance
 ```
 
 <details>
 <summary>Uninstall mic-enhance — ready-to-copy command</summary>
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall mic-enhance
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall mic-enhance
+```
+
+</details>
+
+### smart-auto-brightness
+
+**Smart auto brightness (Experimental).** Adaptive brightness that stays within ±10 % of the level you set and ignores hand shadows over the light sensor.
+
+Replaces KWin's automatic brightness, which on the Legion Go dims the screen whenever the right hand covers the sensor. KWin's setting is restored on uninstall.
+
+**Install — copy this entire command:**
+
+```bash
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install smart-auto-brightness
+```
+
+<details>
+<summary>Uninstall smart-auto-brightness — ready-to-copy command</summary>
+
+```bash
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall smart-auto-brightness
 ```
 
 </details>
@@ -140,14 +162,14 @@ d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detache
 **Install — copy this entire command:**
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install decky-loader
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install decky-loader
 ```
 
 <details>
 <summary>Uninstall decky-loader — ready-to-copy command</summary>
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall decky-loader
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall decky-loader
 ```
 
 </details>
@@ -161,14 +183,14 @@ d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detache
 **Install — copy this entire command:**
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install decky-power-plugins
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install decky-power-plugins
 ```
 
 <details>
 <summary>Uninstall decky-power-plugins — ready-to-copy command</summary>
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall decky-power-plugins
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" uninstall decky-power-plugins
 ```
 
 </details>
@@ -176,7 +198,7 @@ d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detache
 ## Before installing
 
 - This project enhances **official Valve SteamOS**; it does not replace the operating system, Steam Input, or the Steam keyboard.
-- Commands clone the audited v0.2.3 release into `~/.local/share/legiongo-steamos/v0.2.3` and run the selected local installer. GitHub displays a **Copy** control on each code block.
+- Commands clone the audited v0.2.4 release into `~/.local/share/legiongo-steamos/v0.2.4` and run the selected local installer. GitHub displays a **Copy** control on each code block.
 - Installer results are `INSTALLED & VERIFIED`, `INSTALLED — VERIFICATION PENDING`, or `FAILED` with rollback. A software check is not proof of compatibility on other physical devices.
 - Tweaks that modify system files request `sudo`. Set a SteamOS user password with `passwd` first if needed; do not include your password in a command.
 - Existing third-party/manual installations are detected and not silently overwritten. See [adoption and updates](INSTALLATION.md).
@@ -186,13 +208,13 @@ d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detache
 **List available tweaks and their compatibility on this device:**
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" list
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" list
 ```
 
 **Health report:**
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.3; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.3 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" doctor
+d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" doctor
 ```
 
 **Documentation:** [Installation & management](INSTALLATION.md) · [Compatibility](COMPATIBILITY.md) · [Performance](PERFORMANCE.md) · [Troubleshooting](TROUBLESHOOTING.md) · [GitHub repository](https://github.com/daineku/legiongosteamos)
