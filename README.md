@@ -84,6 +84,7 @@ When the keyboard closes, the controller behaves normally again. On a Steam Deck
 | **Multilingual** | KDE's layout follows the Steam keyboard language, so English and Russian (and other XKB layouts) arrive as real key events, also in Chrome. Your own layout returns on Hide. |
 | **Desktop navigation** | Tab / Shift+Tab between fields; Ctrl and Alt for shortcuts on every layout |
 | **Long press** | Release on a key for its second symbol (`9` → `(`, `2` → `@`, Russian `3` → `№`), or slide to any entry in Steam's symbol popup |
+| **Double Space** | Two quick taps after a word type `. ` and capitalise the next letter |
 | **Emoji** | Tap 🌐 to switch language; hold it to open Steam's emoji picker |
 | **Multi-touch** | Hold Ctrl or Alt with one finger and tap another key (Alt+Tab, Ctrl+C); tap once for one key, twice to lock |
 | **Backspace hold** | Characters (accelerating) in terminals, whole words in text fields |

@@ -17,7 +17,7 @@
  */
 (function () {
   "use strict";
-  const VERSION = 41;
+  const VERSION = 44;
   const NS = "__LGK";
   const prev = window[NS];
   if (prev && prev.version === VERSION) return "lgk: already v" + VERSION;
@@ -28,6 +28,7 @@
     panelAlpha: 0.55,       // opacity of the keyboard panel between the keys
     darkLuma: 0.35,         // only backgrounds darker than this get alpha
     longPressMs: 500,       // language key long press -> emoji
+    doubleSpaceMs: 250,     // max gap between two Space taps for ". ": reference device, deliberate double taps 133–232 ms, separate spaces ≥ 285 ms
     bsCharRepeats: 6,       // Backspace hold: this many fast single-character repeats ...
     bsCharMs: [[6, 80], [20, 50], [Infinity, 30]],    // char repeat interval by repeat count (stock: 200 ms)
     bsWordMs: [[12, 250], [20, 180], [Infinity, 120]], // word (Ctrl+Backspace) interval by repeat count
@@ -103,6 +104,8 @@
       if ((L.mods.ctrl || L.mods.alt) && sendChord(this, e)) return;
       if (L.dryRun && !(this.constructor.s_keyToggleData || {})[e.strKey]) { L.dryLog.push(e.strKey); return; } // self-test: record, send nothing (toggles only change keyboard state)
       const k = e.strKey;
+      if (k === " " && doubleSpace(this, orig)) return;
+      trackTyped(k);
       if (k === "SwitchKeys_Steam") { togglePosition(); return; }
       if (k === "SwitchKeys_Layout" && L.suppressLayoutOnce) { L.suppressLayoutOnce = false; return; }
       if (k === "VKMove") return; // movement is handled exclusively by the toggle key
@@ -173,6 +176,43 @@
     });
   }
 
+
+  // ---------------------------------------------------------------- double Space -> ". "
+  // Two Space taps in quick succession after a letter or digit replace the first space with a period
+  // (". ") and switch Shift on for the next letter, like phone and macOS keyboards. Uses Steam's own key path (real key events, current layout).
+  // Off in terminals, code editors and remote-desktop clients; disable completely with the flag file
+  // ~/.config/legiongo-steamos/steam-keyboard/lgk-doublespace-off. Password fields cannot be detected
+  // without accessibility events, so do not double-tap Space inside a password.
+  const DS_EXCLUDED = /^(org\.kde\.konsole|konsole|yakuake|org\.kde\.yakuake|kitty|alacritty|foot|xterm|org\.wezfurlong\.wezterm|com\.mitchellh\.ghostty|gnome-terminal-server|org\.gnome\.console|terminator|com\.gexperts\.tilix|sublime_text|code|code-oss|codium|vscodium|org\.kde\.kate|kate|org\.kde\.kwrite|jetbrains-.*|neovide|emacs|rustdesk|com\.rustdesk\.rustdesk|org\.remmina\.remmina|steam)$/;
+  L.typed = { prevChar: null, lastSpaceAt: 0, lastWasSpace: false };
+  function trackTyped(k) {
+    const t = L.typed;
+    if (k === " ") return;
+    t.lastWasSpace = false;
+    t.prevChar = (typeof k === "string" && k.length === 1) ? k : null;   // Backspace, Enter, Tab, arrows reset
+  }
+  function doubleSpace(inst, orig) {
+    const t = L.typed, now = Date.now();
+    const eligible = L.doubleSpace && !L.terminal && !DS_EXCLUDED.test(L.activeClass) && !L.mods.ctrl && !L.mods.alt &&
+      t.lastWasSpace && now - t.lastSpaceAt <= CFG.doubleSpaceMs && t.prevChar && /[\p{L}\p{N}]/u.test(t.prevChar);
+    if (!eligible) {
+      // only the character directly before the FIRST space counts: after two spaces it is a space
+      if (t.lastWasSpace) t.prevChar = " ";
+      t.lastWasSpace = true; t.lastSpaceAt = now;
+      return false;
+    }
+    if (L.dryRun) L.dryLog.push("<double-space>");
+    else {
+      orig.call(inst, { strKey: "Backspace" });     // the first space
+      orig.call(inst, { strKey: "." });
+      orig.call(inst, { strKey: " " });
+      // new sentence: one-shot Shift (same state as tapping Shift once; Steam clears it after the next key)
+      inst.setState((d) => ({ ...d, toggleStates: { ...d.toggleStates,
+        Shift: tActive(d.toggleStates.Shift || 0) ? d.toggleStates.Shift : 1 } }));
+    }
+    t.lastWasSpace = false; t.prevChar = ".";        // a third Space types a normal space
+    return true;
+  }
 
   // ---------------------------------------------------------------- Ctrl / Alt keys
   // Two stock-named toggle keys ("Control", "Alt") are inserted around the language key of the
@@ -686,7 +726,7 @@
     }
     L.padStats = {};
     ti.OnAnalogPad = function (pad, x, y, idx) {
-      if (pad === RPAD_TOUCH && L.bridgeOn && !L.fromStick && isOurs(L.inst)) return;
+      if (pad === RPAD_TOUCH && (L.bridgeOn || L.dualJoystick) && !L.fromStick && isOurs(L.inst)) return;
       return orig.OnAnalogPad.apply(this, arguments);
     };
     // While the bridge is on: d-pad = arrow keys and triggers = mouse clicks (sent by lgk-helper,
@@ -695,8 +735,9 @@
     const trigBlocked = {};
     const btnWrap = (k) => function (btn) {
       if (k === "OnButtonDown") L.padStats[btn] = (L.padStats[btn] || 0) + 1;
+      if ((L.bridgeOn || L.dualJoystick) && isOurs(L.inst) && (btn === RPAD_TOUCH || btn === RPAD_CLICK)) return;
       if (L.bridgeOn && isOurs(L.inst)) {
-        if (btn === RPAD_TOUCH || btn === RPAD_CLICK || DIRS.has(btn)) return;
+        if (DIRS.has(btn)) return;
         if (TRIG[btn]) {
           // RT is always the desktop left click while the keyboard is open (sent by lgk-helper);
           // LT presses the key under an active left cursor, otherwise right click.
@@ -728,6 +769,18 @@
       }
       L.cleanups.push(() => { for (const kk of Object.keys(sOrig)) { try { if (sOwn[kk] === undefined) delete src[kk]; else src[kk] = sOwn[kk]; } catch (e) {} } });
     }
+    // The physical touchpad reaches Steam as Deck trackpad buttons (LPAD/RPAD touch/click). Steam's focus
+    // navigation treats them as gamepad input: it switches to the gamepad navigation source and shows the focus
+    // ring on the keyboard's default key (G), where a controller A press would also type. On dual-joystick
+    // devices the touchpad is the desktop mouse only, so swallow those buttons at Steam's own catch-all hook
+    // before they reach focus navigation (sticks, triggers, touch and A/B are untouched).
+    const PADBTN = new Set([LPAD_TOUCH, 20, RPAD_TOUCH, RPAD_CLICK]);
+    const catchAll = fnc && fnc.m_rgCatchAllGamepadInput;
+    if (Array.isArray(catchAll)) {
+      const swallow = (btn) => !!((L.bridgeOn || L.dualJoystick) && isOurs(L.inst) && PADBTN.has(btn));
+      catchAll.push(swallow);
+      L.cleanups.push(() => { const i = catchAll.indexOf(swallow); if (i >= 0) catchAll.splice(i, 1); });
+    } else if (!L.unsupported.includes("touchpad focus isolation")) L.unsupported.push("touchpad focus isolation");
     L.cleanups.push(() => {
       for (const k of Object.keys(orig)) {
         if (own[k] === undefined) delete ti[k]; else ti[k] = own[k];
@@ -737,6 +790,12 @@
   }
   L.dryLog = [];
   L.dry = (on) => { L.dryRun = !!on; L.dryLog = []; return L.dryRun; };
+  L.dualJoystick = false;      // set by lgk-helper at injection: InputPlumber virtual Deck controller present
+  L.setDualJoystick = (on) => { L.dualJoystick = !!on; return L.dualJoystick; };
+  L.activeClass = "";
+  L.setActiveClass = (c) => { L.activeClass = String(c || "").toLowerCase(); return L.activeClass; };
+  L.doubleSpace = true;
+  L.setDoubleSpace = (on) => { L.doubleSpace = !!on; return L.doubleSpace; };
   L.terminal = false;
   L.setTerminal = (on) => { L.terminal = !!on; return L.terminal; };
   L.rclick = (down) => {

@@ -1,7 +1,7 @@
 {
   "id": "steam-keyboard",
   "name": "Native Steam Keyboard Enhancement",
-  "version": "41.0.0",
+  "version": "44.0.0",
   "status": "Reference Verified",
   "scope": "Desktop",
   "requires_root": false,

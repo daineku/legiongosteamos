@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.4 — 2026-11-26
+
+- `steam-keyboard` 44.0.0:
+  - **Fix: the touchpad no longer highlights G.** Steam's focus navigation treated touchpad touches as controller input and showed its focus ring on the keyboard's default key, where a controller A press could also type. Touchpad buttons are now swallowed at Steam's own catch-all input hook while the keyboard is open on dual-joystick devices. That capability is sent at injection time, so there is no race when the keyboard opens.
+  - **New: double Space → `. `** with a one-shot Shift for the next letter. 250 ms window calibrated on real double taps; only after a letter or digit; off in terminals, code editors and remote-desktop apps; can be disabled with a flag file.
+  - Both verified live on the reference device by the owner (sticks, LT/R3 and RT unchanged).
+
 ## 0.2.3 — 2026-11-24 (stable for the reference environment)
 
 **Installer**

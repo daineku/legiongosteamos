@@ -25,6 +25,7 @@ It keeps **Valve's own on-screen keyboard** (Steam button + X) and improves how 
 - **Ctrl and Alt keys** on every layout (Ctrl+C/V/Z, Alt+Tab).
 - **Tab / Shift+Tab** move between form fields.
 - **Long press for special symbols.** Hold a key and release it to type its second symbol: `0` → `)`, `9` → `(`, `2` → `@` in English; `3` → `№`, `7` → `?`, `.` → `,` in Russian. Sliding onto another entry of Steam's popup (for example `₽` on `8`) types that entry instead. On English and Russian the symbol is sent as a real Shift + key, so it arrives correctly in every app, including Chrome and remote-desktop clients.
+- **Double Space → period.** Two quick Space taps after a letter or digit type `. ` and switch Shift on for the next letter, so a new sentence starts with a capital. A slower second tap, or a double tap after a space or symbol, types normal spaces. Off in terminals, code editors and remote-desktop apps. Disable it with `touch ~/.config/legiongo-steamos/steam-keyboard/lgk-doublespace-off` and restart the service.
 - **Emoji on the language key.** A short tap on 🌐 switches language; holding it for half a second opens Steam's own emoji picker.
 - **Multi-touch modifiers.** Ctrl, Alt and Shift work like real keys with more than one finger:
   - hold Ctrl or Alt with one finger and tap another key (Alt+Tab, Ctrl+C);
@@ -71,6 +72,8 @@ Forms, chat and terminal commands can be typed in Desktop Mode with the touchscr
 |---|---|---|
 | Placement, Hide, transparency, stacking, Backspace hold | Reference Verified | compatible by capability, untested |
 | Long-press special symbols (physical Shift chords on EN/RU, popup entries), emoji on 🌐 hold, multi-touch Ctrl/Alt/Shift | Reference Verified | compatible by capability, untested (physical chords need `/dev/uinput`, standard on SteamOS) |
+| Double Space → `. ` + capital (250 ms window, calibrated on real double taps 133–232 ms vs. separate spaces ≥ 285 ms) | Reference Verified (v44, live on 2026-11-26) | compatible by capability, untested |
+| Touchpad never highlights a key (G) or drives Steam's controller focus while the keyboard is open | Reference Verified (v44, live on 2026-11-26) | dual-joystick devices only; Steam Deck keeps native trackpad typing |
 | Tab / Shift+Tab | Reference Verified (trusted Chrome key events; on-screen Shift + Tab) | compatible by capability, untested |
 | Multilingual: English ↔ Russian sync, restore on Hide, reopen | Reference Verified (v41, live on 2026-11-23) | compatible by capability, untested |
 | Multilingual: other XKB layouts (de, fr, es, ua, …) | same code path; not tested by native speakers | — |
@@ -129,6 +132,8 @@ Restart Steam afterwards for the completely stock keyboard. Only what the tweak 
 | Gaming Mode | not running |
 
 ## Limitations
+
+- Double Space cannot detect password fields (no accessibility events while auto-open is off). Avoid double-tapping Space inside a password, or disable the feature with the flag file.
 
 - Layout sync needs the matching KDE layout. Nothing is added unless you ask (`LG_KEYBOARD_LAYOUTS`).
 - Physical long-press symbols are used on grid-verified layouts (English, Russian); other layouts keep Steam's long-press popup.

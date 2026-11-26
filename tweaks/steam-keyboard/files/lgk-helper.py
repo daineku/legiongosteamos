@@ -45,6 +45,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 INJECT_JS = os.path.join(HERE, "lgk-inject.js")
 DISABLE_FLAG = os.path.expanduser("~/.config/legiongo-steamos/steam-keyboard/lgk-disabled")
 AUTOOPEN_OFF_FLAG = os.path.expanduser("~/.config/legiongo-steamos/steam-keyboard/lgk-autoopen-off")
+DOUBLESPACE_OFF_FLAG = os.path.expanduser("~/.config/legiongo-steamos/steam-keyboard/lgk-doublespace-off")
 CDP = ("127.0.0.1", 8080)
 RUNTIME_STATE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "lgk-helper.state")  # for --cleanup
 # Multilingual Input Support: last seen Steam keyboard languages and their KDE/XKB status (read by `legiongo.sh status`)
@@ -555,6 +556,12 @@ class Helper:
                 log(val)
                 if self.bridge.fd is not None:
                     self.send_js("window.__LGK && __LGK.bridge(true)")
+                # capability, known before any keyboard opens: the touchpad must never drive the keyboard's
+                # cursors or Steam's focus navigation on dual-joystick devices (closes the race at keyboard open)
+                self.send_js("window.__LGK && __LGK.setDualJoystick && __LGK.setDualJoystick(%s)"
+                             % ("true" if PadBridge.find_hidraw() else "false"))
+                self.send_js("window.__LGK && __LGK.setDoubleSpace && __LGK.setDoubleSpace(%s)"
+                             % ("false" if os.path.exists(DOUBLESPACE_OFF_FLAG) else "true"))
                 self.set_terminal(self.terminal)
                 self.sync_state()
         self.conn.evaluate(js, done)
@@ -670,6 +677,7 @@ class Helper:
                     if len(v) == 8:
                         self.win = v
                         self.active_class = parts[8].lower() if len(parts) > 8 else ""
+                        self.send_js("window.__LGK && __LGK.setActiveClass && __LGK.setActiveClass(%s)" % json.dumps(self.active_class))
                         if not self.autoopen:
                             self.set_terminal(self.active_class in self.TERMINAL_CLASSES)
                 except ValueError:
