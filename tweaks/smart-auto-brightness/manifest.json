@@ -1,0 +1,16 @@
+{
+  "id": "smart-auto-brightness",
+  "name": "Smart Auto Brightness",
+  "version": "1.0.0",
+  "status": "Experimental",
+  "scope": "Desktop",
+  "requires_root": false,
+  "depends": [],
+  "tested_steamos": ["3.9.5"],
+  "summary": "Gentle ambient-light brightness for Desktop Mode: keeps the brightness you set and adjusts it by at most ±10 % with the room light, ignores short shadows (a hand over the sensor) and ramps softly. Replaces KWin's built-in automatic brightness, which jumps by large amounts within seconds; KWin's setting is restored on uninstall.",
+  "restart": "Nothing. It starts immediately; your current brightness becomes the baseline.",
+  "layer": "portable",
+  "category": "software",
+  "hardware": "capability",
+  "version_policy": "feature"
+}

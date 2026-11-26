@@ -1,0 +1,18 @@
+[Unit]
+Description=Legion Go SteamOS: gentle ambient-light brightness (one controller instead of KWin's automatic mode)
+Documentation=https://github.com/daineku/legiongosteamos/tree/main/tweaks/smart-auto-brightness
+PartOf=plasma-workspace.target
+After=plasma-workspace.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sh %h/.local/lib/legiongo-steamos/smart-auto-brightness/kwin-auto-brightness.sh off
+ExecStart=/usr/bin/python3 -I %h/.local/lib/legiongo-steamos/smart-auto-brightness/legiongo-auto-brightness.py
+# hand automatic brightness back to KWin whenever this controller stops (logout, crash, uninstall)
+ExecStopPost=/bin/sh %h/.local/lib/legiongo-steamos/smart-auto-brightness/kwin-auto-brightness.sh restore
+Restart=on-failure
+RestartSec=5
+Nice=5
+
+[Install]
+WantedBy=plasma-workspace.target

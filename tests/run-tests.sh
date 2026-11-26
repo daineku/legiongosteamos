@@ -367,6 +367,7 @@ sim_tests() {
     fi
 
     # --- Multilingual Input Support: helper logic (pure functions, no D-Bus)
+    t "smart-auto-brightness: controller logic (shadows ignored, +/-10 %, persistence, manual baseline, floor)" python3 -I "$REPO/tests/test_auto_brightness.py" "$REPO/tweaks/smart-auto-brightness/files/legiongo-auto-brightness.py"
     t "multilingual: helper layout matching and language report" python3 -I "$REPO/tests/test_lgk_helper.py" "$REPO/tweaks/steam-keyboard/files/lgk-helper.py"
 
     # --- library: replacing a pre-existing file and restoring it
