@@ -7,11 +7,11 @@
 
 Each device guide has **one complete, release-pinned command per tweak** plus copy-ready uninstall commands. There is no need to replace a tweak name or edit the command. Click a tweak in the guide's table, then use GitHub's built-in **Copy** control on the Bash code block. Open **Konsole** in SteamOS Desktop Mode and paste.
 
-The commands clone the exact reviewed `v0.2.4` release into `~/.local/share/legiongo-steamos/v0.2.4`, only when needed, and run the selected tweak's local installer. No remote shell code is piped directly into Bash. Users can inspect the checkout first.
+The commands clone the exact reviewed `v0.2.5` release into `~/.local/share/legiongo-steamos/v0.2.5`, only when needed, and run the selected tweak's local installer. No remote shell code is piped directly into Bash. Users can inspect the checkout first.
 
 Installations are independent; no global 'install everything' action is run. Each tweak checks compatibility, requests permission before installing a dependency, records its rollback state in `~/.local/state/legiongo-steamos/<tweak>/`, and asks for `sudo` only when required. The `deck` user may need to set an administrator password first via `passwd`.
 
-Verify the checkout with `git -C ~/.local/share/legiongo-steamos/v0.2.4 log -1 --format=%H`, which should match the published release's commit. The device-specific pages also provide one-click `list` and `doctor` commands.
+Verify the checkout with `git -C ~/.local/share/legiongo-steamos/v0.2.5 log -1 --format=%H`, which should match the published release's commit. The device-specific pages also provide one-click `list` and `doctor` commands.
 
 ## Results
 

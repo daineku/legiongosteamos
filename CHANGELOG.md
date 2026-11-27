@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.5 — 2026-11-27
+
+- `steam-keyboard` 46.0.0, **fix: Russian letters (notably `о`) not typing.**
+  - Steam's own character-to-key table went stale and sent `о` as the "web browser" media key. This was not caused by our code: the previous v40 script failed identically, and a Steam restart cleared it.
+  - On English and Russian (layouts whose Steam key grid matches XKB), keys are now sent as the physical key at their position, so Steam's table is no longer involved.
+  - Shift, Caps Lock, shifted symbols, Space, Backspace, Enter and double space are all covered, and typing order is preserved.
+  - Fixed during testing:
+    - after a helper restart, a stale layout confirmation could have typed Latin; the helper now always re-syncs on connect;
+    - after a helper restart, closing the keyboard could have left KDE on Russian; your default layout is now restored.
+  - Verified live on the reference device.
+
 ## 0.2.4 — 2026-11-27
 
 - New tweak `smart-auto-brightness` 1.0.0 (Experimental). KWin's built-in automatic brightness maps lux to an absolute brightness after a 2 s timer, so a hand over the Legion Go's sensor dimmed the screen from 100 % to about 33 %. The new controller replaces it:

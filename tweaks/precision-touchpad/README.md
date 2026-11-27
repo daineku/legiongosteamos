@@ -74,8 +74,8 @@ Tested: Legion Go 83E1, SteamOS 3.9.5. The installer was validated in isolated t
 ## Installation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.4
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.5
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.5 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" install precision-touchpad
 ```
 
@@ -83,14 +83,14 @@ For the tap-precision variant, insert `LG_IP_VARIANT=tapfilter` before `"$d/legi
 
 ## Verification
 
-1. Run `~/.local/share/legiongo-steamos/v0.2.4/legiongo.sh status precision-touchpad`. It shows the binary (variant) and that the service is active.
+1. Run `~/.local/share/legiongo-steamos/v0.2.5/legiongo.sh status precision-touchpad`. It shows the binary (variant) and that the service is active.
 2. Move a finger slowly on the touchpad: the cursor glides instead of stepping.
 
 ## Uninstallation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.4
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.5
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.5 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" uninstall precision-touchpad
 ```
 

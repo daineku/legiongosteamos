@@ -30,3 +30,23 @@
   Missing KDE layouts are logged and listed by `legiongo.sh status steam-keyboard` (from `$XDG_RUNTIME_DIR/lgk-languages.json`). They are never added silently; the installer adds them only with `LG_KEYBOARD_LAYOUTS`.
 - Physical long-press chords (real Shift + evdev key) are used only on layouts whose Steam key grid was verified to match XKB key for key (`grid: "ansi"`: qwerty, russian), and only once KDE is confirmed on the matching layout. Other layouts keep Steam's own long-press popup.
 - Live check on the reference device (2026-11-23): v41 detected the enabled layouts `[qwerty → us, russian → ru]` and tracked the current language, with no unsupported hooks. The helper's matching and reporting logic is unit-tested (`tests/test_lgk_helper.py`).
+
+## Physical typing on grid-verified layouts (v45/v46)
+
+**Problem:** Steam types a character by looking up a key code in its own copy of the layout. On the reference device that table went stale: Russian `о` produced keycode 158 (`XF86WWW`, "LaunchWebBrowser"), although KWin's keymap was correct (`Cyrillic_o` on `<AC07>`). The old v40 script showed the same failure, so it was not caused by our code, and a Steam restart fixed it.
+
+**Fix (`typePhysical` in lgk-inject.js):** on layouts marked `grid: "ansi"` (qwerty, russian), once lgk-helper has confirmed KDE on the matching XKB layout, a key of the main grid is sent as the evdev scancode of its grid position (`posScan`) through lgk-helper's uinput device. Space, Backspace and Enter are sent the same way.
+- **Shift:** set when Steam's Shift is active (Steam then shows the shifted labels).
+- **Letters:** uppercase with Shift or Caps Lock, Steam's own rule.
+- **One-shot Shift:** a Shift already used by the previous key is ignored even before Steam's React state updates.
+- **One path:** all keys of the layout go the same way, so fast typing cannot be reordered. Double Space uses it too.
+
+**Safety:** lgk-helper forgets the layout confirmation whenever it (re)connects (`resyncLang`), because an exiting helper restores the user's KDE layout. Physical typing therefore never sends Russian key positions to an English layout.
+
+**Verified live (2026-11-27):**
+- the full Russian alphabet including `о` and `ё`, typed back-to-back;
+- `Привет` with one-shot Shift; Caps Lock (`МИР`, digits unchanged);
+- shifted symbols (`"`, `№`, `!`, `@`); English punctuation;
+- double space (`да. Нет`);
+- a helper restart while typing (`окно`);
+- all key events trusted, none mapped to media keys.

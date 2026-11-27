@@ -16,7 +16,7 @@
 
 ## Install — choose your device
 
-Open a device guide, choose a tweak, then press GitHub's **Copy** button on its ready-to-paste terminal command. **No placeholders, no editing, and no manual tweak-name replacement.** Commands install one module at a time, pinned to the reviewed **v0.2.4 release**.
+Open a device guide, choose a tweak, then press GitHub's **Copy** button on its ready-to-paste terminal command. **No placeholders, no editing, and no manual tweak-name replacement.** Commands install one module at a time, pinned to the reviewed **v0.2.5 release**.
 
 | Device | One-click installation guide | Support |
 |---|---|---|
@@ -32,7 +32,7 @@ Open a device guide, choose a tweak, then press GitHub's **Copy** button on its 
 **Quick install: native Steam keyboard** (for compatible SteamOS Desktop Mode devices):
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.4; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
+d=~/.local/share/legiongo-steamos/v0.2.5; { [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.5 https://github.com/daineku/legiongosteamos.git "$d"; } && "$d/legiongo.sh" install steam-keyboard
 ```
 
 For touchpad, power, microphone, Decky and other improvements, use your device guide above — every tweak has its **own complete command**. The installer checks compatibility and asks before changing anything requiring additional permissions. [Installation, updates and rollback](docs/INSTALLATION.md).

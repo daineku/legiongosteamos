@@ -59,8 +59,8 @@ None (python3 with GObject introspection, iio-sensor-proxy, kscreen-doctor and j
 ## Installation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.4
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.5
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.5 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" install smart-auto-brightness
 ```
 
@@ -75,8 +75,8 @@ On the reference device (2026-11-26, dim room, about 4 lux): covering the sensor
 ## Uninstallation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.4
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.5
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.5 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" uninstall smart-auto-brightness
 ```
 
