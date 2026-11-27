@@ -17,7 +17,7 @@
  */
 (function () {
   "use strict";
-  const VERSION = 44;
+  const VERSION = 46;
   const NS = "__LGK";
   const prev = window[NS];
   if (prev && prev.version === VERSION) return "lgk: already v" + VERSION;
@@ -110,6 +110,7 @@
       if (k === "SwitchKeys_Layout" && L.suppressLayoutOnce) { L.suppressLayoutOnce = false; return; }
       if (k === "VKMove") return; // movement is handled exclusively by the toggle key
       if (k === "VKClose") L.hideRequested = true;
+      if (typePhysical(this, k)) return;
       return orig.call(this, e);
     });
     // UpdateWindowSize / RotateWindowPosition are auto-bound getters on this Steam build and
@@ -156,7 +157,7 @@
     });
     wrap("componentDidUpdate", function (orig, ...args) {
       const r = orig.apply(this, args);
-      if (isOurs(this)) { syncMods(this); patchLayout(this); syncLang(this); }
+      if (isOurs(this)) { syncMods(this); patchLayout(this); syncLang(this); if (!(((this.state.toggleStates || {}).Shift || 0) & 3)) L.oneShotUsed = false; }
       return r;
     });
     wrap("LongPressTimerExpired", function (orig, ...args) {
@@ -203,9 +204,9 @@
     }
     if (L.dryRun) L.dryLog.push("<double-space>");
     else {
-      orig.call(inst, { strKey: "Backspace" });     // the first space
-      orig.call(inst, { strKey: "." });
-      orig.call(inst, { strKey: " " });
+      for (const key of ["Backspace", ".", " "]) {      // replace the first space with ". "
+        if (!typePhysical(inst, key)) orig.call(inst, { strKey: key });
+      }
       // new sentence: one-shot Shift (same state as tapping Shift once; Steam clears it after the next key)
       inst.setState((d) => ({ ...d, toggleStates: { ...d.toggleStates,
         Shift: tActive(d.toggleStates.Shift || 0) ? d.toggleStates.Shift : 1 } }));
@@ -354,6 +355,14 @@
              : { steam: name, kind: "native", xkb: null, variant: "", grid: "" };
   };
   L.kdeLayout = null;      // set by lgk-helper: the XKB layout KDE is synced to, or null when not synced
+  // lgk-helper calls this whenever it (re)connects: KDE's layout may have changed meanwhile (an old helper
+  // restores the user's layout when it exits), so forget the confirmation and sync again. Physical typing
+  // stays off until the helper confirms the layout.
+  L.resyncLang = () => {
+    L.kdeLayout = null; L.langKey = null;
+    if (isOurs(L.inst)) syncLang(L.inst);
+    return "resync";
+  };
 
   // The user's enabled Steam keyboard languages, from Steam's keyboard settings store (found by content,
   // not by the hashed module id). Read-only; null if this Steam build stores them differently.
@@ -407,6 +416,46 @@
   function posScan(k) {
     const r = parseInt(k.getAttribute("data-key-row")), c = parseInt(k.getAttribute("data-key-col"));
     return (POS_SCAN[r] || [])[c];
+  }
+
+  // Physical typing on grid-verified layouts. Steam turns typed characters into key codes with its own
+  // character table, and that table can go stale (seen on the reference device: Russian "о" arrived as
+  // keycode 158 / LaunchWebBrowser until Steam was restarted; steam-for-linux#13644). On English and Russian,
+  // whose Steam key grid matches XKB key for key, and once KDE is confirmed on the matching layout, every
+  // key of the main grid plus Space, Backspace and Enter is sent as the real key at that position through
+  // lgk-helper's uinput device, so Steam's table is not involved. Shift is applied when the typed symbol is
+  // the key's shifted one (Steam Shift active), and letters are uppercase with Shift or Caps Lock (Steam's rule). All other keys, other
+  // layouts and input methods keep Steam's own path. Keys of one keyboard always use one path (no reordering).
+  const PHYS_SPECIAL = { " ": 57, Backspace: 14, Enter: 28 };
+  function typePhysical(inst, k) {
+    if (!L.bridgeOn || typeof k !== "string") return false;
+    const sl = inst.state && inst.state.standardLayout;
+    const info = sl && layoutInfo(sl.name);
+    if (!info || info.grid !== "ansi" || !info.xkb || L.kdeLayout !== info.xkb) return false;
+    if (inst.state.layoutState !== 0) return false;                   // letters page only (not symbols/emoji)
+    const ts = inst.state.toggleStates || {};
+    let scan = PHYS_SPECIAL[k], shift = false;
+    if (scan === undefined) {
+      if (k.length !== 1) return false;
+      const doc = L.popup && L.popup.m_popup && L.popup.m_popup.document;
+      const el = doc && (doc.querySelector('[data-key="' + CSS.escape(k) + '"]:not([parent-row])') ||
+                         doc.querySelector('[data-key="' + CSS.escape(k.toLowerCase()) + '"]:not([parent-row])'));
+      scan = el && posScan(el);
+      if (!(scan >= 1 && scan <= 58) || scan === 42) return false;
+      const letter = /\p{L}/u.test(k);
+      // same rule as Steam: letters are uppercase with Shift OR Caps Lock; other keys use Shift only.
+      // A one-shot Shift already used by the previous key counts as off even before Steam's state updates.
+      const sv = ts.Shift || 0, oneShot = (sv & 3) === 1 && !(sv & 4);
+      const shiftOn = tActive(sv) && !(oneShot && L.oneShotUsed);
+      shift = shiftOn || (letter && tActive(ts.CapsLock || 0));
+    }
+    if (L.dryRun) L.dryLog.push("<key scan=" + scan + " shift=" + shift + ">");
+    else notify("chord", { scan, shift });
+    // consume one-shot modifiers like a normal key press (held / locked stay)
+    if (((ts.Shift || 0) & 3) === 1 && !((ts.Shift || 0) & 4)) L.oneShotUsed = true;
+    inst.setState((d) => ({ ...d, toggleStates: { ...d.toggleStates, Shift: tAfterKey(d.toggleStates.Shift),
+      Control: tAfterKey(d.toggleStates.Control), Alt: tAfterKey(d.toggleStates.Alt) } }), () => { L.oneShotUsed = false; });
+    return true;
   }
 
   function chordSecondary(inst, k) {

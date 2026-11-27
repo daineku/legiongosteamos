@@ -25,6 +25,7 @@ It keeps **Valve's own on-screen keyboard** (Steam button + X) and improves how 
 - **Ctrl and Alt keys** on every layout (Ctrl+C/V/Z, Alt+Tab).
 - **Tab / Shift+Tab** move between form fields.
 - **Long press for special symbols.** Hold a key and release it to type its second symbol: `0` → `)`, `9` → `(`, `2` → `@` in English; `3` → `№`, `7` → `?`, `.` → `,` in Russian. Sliding onto another entry of Steam's popup (for example `₽` on `8`) types that entry instead. On English and Russian the symbol is sent as a real Shift + key, so it arrives correctly in every app, including Chrome and remote-desktop clients.
+- **Letters always arrive as the right key (English and Russian).** On these two layouts, every key of the main grid plus Space, Backspace and Enter is sent as the physical key at that position. Steam's own letter-to-key table can go stale; it once turned Russian `о` into the "web browser" key until Steam was restarted. That table is no longer used there. Other layouts and input methods keep Steam's path.
 - **Double Space → period.** Two quick Space taps after a letter or digit type `. ` and switch Shift on for the next letter, so a new sentence starts with a capital. A slower second tap, or a double tap after a space or symbol, types normal spaces. Off in terminals, code editors and remote-desktop apps. Disable it with `touch ~/.config/legiongo-steamos/steam-keyboard/lgk-doublespace-off` and restart the service.
 - **Emoji on the language key.** A short tap on 🌐 switches language; holding it for half a second opens Steam's own emoji picker.
 - **Multi-touch modifiers.** Ctrl, Alt and Shift work like real keys with more than one finger:
@@ -72,6 +73,7 @@ Forms, chat and terminal commands can be typed in Desktop Mode with the touchscr
 |---|---|---|
 | Placement, Hide, transparency, stacking, Backspace hold | Reference Verified | compatible by capability, untested |
 | Long-press special symbols (physical Shift chords on EN/RU, popup entries), emoji on 🌐 hold, multi-touch Ctrl/Alt/Shift | Reference Verified | compatible by capability, untested (physical chords need `/dev/uinput`, standard on SteamOS) |
+| Physical typing on English/Russian: full Russian alphabet incl. `о`/`ё`, back-to-back typing order, Shift/Caps, shifted symbols, Space/Backspace/Enter, helper restart while typing | Reference Verified (v46, live on 2026-11-27) | compatible by capability, untested (needs `/dev/uinput`) |
 | Double Space → `. ` + capital (250 ms window, calibrated on real double taps 133–232 ms vs. separate spaces ≥ 285 ms) | Reference Verified (v44, live on 2026-11-26) | compatible by capability, untested |
 | Touchpad never highlights a key (G) or drives Steam's controller focus while the keyboard is open | Reference Verified (v44, live on 2026-11-26) | dual-joystick devices only; Steam Deck keeps native trackpad typing |
 | Tab / Shift+Tab | Reference Verified (trusted Chrome key events; on-screen Shift + Tab) | compatible by capability, untested |
@@ -92,8 +94,8 @@ The keyboard script depends on Steam client internals. Each hook is checked when
 ## Installation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.4
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.5
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.5 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" install steam-keyboard
 ```
 
@@ -110,13 +112,13 @@ If Steam's local debugger is not enabled yet, the installer asks before enabling
 2. In Chrome, type in a form field and press Tab. The next field gets focus.
 3. Tap 🌐 and type. Hide the keyboard: your KDE layout is back.
 4. On the Legion Go: move both sticks. Two cursors move; LT and R3 press keys.
-5. `~/.local/share/legiongo-steamos/v0.2.4/legiongo.sh status steam-keyboard` shows "working: yes", and each enabled Steam language as *synced*, *needs a KDE layout*, or *handled by Steam* (input methods).
+5. `~/.local/share/legiongo-steamos/v0.2.5/legiongo.sh status steam-keyboard` shows "working: yes", and each enabled Steam language as *synced*, *needs a KDE layout*, or *handled by Steam* (input methods).
 
 ## Uninstallation
 
 ```bash
-d=~/.local/share/legiongo-steamos/v0.2.4
-{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.4 https://github.com/daineku/legiongosteamos.git "$d"; } &&
+d=~/.local/share/legiongo-steamos/v0.2.5
+{ [ -d "$d" ] || git -c advice.detachedHead=false clone -q --depth 1 -b v0.2.5 https://github.com/daineku/legiongosteamos.git "$d"; } &&
 "$d/legiongo.sh" uninstall steam-keyboard
 ```
 

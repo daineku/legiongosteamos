@@ -563,6 +563,11 @@ class Helper:
                 self.send_js("window.__LGK && __LGK.setDoubleSpace && __LGK.setDoubleSpace(%s)"
                              % ("false" if os.path.exists(DOUBLESPACE_OFF_FLAG) else "true"))
                 self.set_terminal(self.terminal)
+                # KDE's layout may have changed while no helper was connected: never trust a stale sync
+                # the current KDE layout may still be the keyboard's language (Russian) if the keyboard is open,
+                # so after a (re)connect "the user's layout" is KDE's first (default) layout, as in v40
+                self.home_layout = 0
+                self.send_js("window.__LGK && __LGK.resyncLang && __LGK.resyncLang()")
                 self.sync_state()
         self.conn.evaluate(js, done)
 
